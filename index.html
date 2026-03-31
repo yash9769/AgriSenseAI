@@ -1456,13 +1456,11 @@ function clearManualConfig() {
 async function init() {
   if (!sb) {
     navigateTo('onboarding');
-    // Show setup helper if not configured
     if (!SUPABASE_URL || SUPABASE_URL.includes('PLACEHOLDER')) {
       setTimeout(() => document.getElementById('setup-modal')?.classList.remove('hidden'), 2000);
     }
     return;
   }
-  // Check existing session
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
@@ -1471,7 +1469,11 @@ async function init() {
       navigateTo('dashboard');
     } else {
       navigateTo('onboarding');
-   // Auth state listener
+    }
+  } catch (e) {
+    navigateTo('onboarding');
+  }
+
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       currentUser = session.user;
