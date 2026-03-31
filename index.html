@@ -736,6 +736,7 @@ async function handleDemoLogin() {
 }
 
 async function handleSignup() {
+  if (!sb) return showAuthError('Supabase client not initialized. Check your configuration.');
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
@@ -743,7 +744,7 @@ async function handleSignup() {
   if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
   clearAuthMessages();
   const btn = document.getElementById('signup-btn');
-  btn.disabled = true; btn.textContent = 'Creating account...';
+  btn.disabled = true; if (btn) btn.textContent = 'Creating account...';
   try {
     const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name, role: selectedRole || 'Farmer' } } });
     if (error) throw error;
