@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AI-Powered Crop Diagnostics Platform",
   "scripts": {
-    "build": "mkdir -p public && cp index.html public/index.html && sed -i \"s|PLACEHOLDER_SUPABASE_URL|$SUPABASE_URL|g\" public/index.html && sed -i \"s|PLACEHOLDER_SUPABASE_ANON_KEY|$SUPABASE_ANON_KEY|g\" public/index.html && sed -i \"s|PLACEHOLDER_GROK_API_KEY|$GROK_API_KEY|g\" public/index.html",
+    "build": "mkdir -p public && cp index.html public/index.html && sed \"s|PLACEHOLDER_SUPABASE_URL|$SUPABASE_URL|g\" public/index.html > tmp.html && mv tmp.html public/index.html && sed \"s|PLACEHOLDER_SUPABASE_ANON_KEY|$SUPABASE_ANON_KEY|g\" public/index.html > tmp.html && mv tmp.html public/index.html && sed \"s|PLACEHOLDER_GROK_API_KEY|$GROK_API_KEY|g\" public/index.html > tmp.html && mv tmp.html public/index.html",
     "start": "serve ."
   }
 }
