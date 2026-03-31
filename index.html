@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgriSense AI - Living Laboratory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary-fixed-dim": "#a5d0b9","secondary-container": "#92f7c3","outline-variant": "#c1c8c2",
+        "on-secondary-fixed-variant": "#005235","outline": "#717973","on-tertiary-fixed-variant": "#5f4100",
+        "surface-dim": "#d8dad9","inverse-primary": "#a5d0b9","surface": "#f8faf8","error": "#ba1a1a",
+        "on-secondary-container": "#00734d","on-error-container": "#93000a","background": "#f8faf8",
+        "tertiary": "#352300","on-tertiary-fixed": "#281900","on-surface": "#191c1b",
+        "secondary-fixed-dim": "#75daa8","on-primary": "#ffffff","error-container": "#ffdad6",
+        "on-primary-container": "#86af99","on-secondary": "#ffffff","secondary": "#006c48",
+        "primary-fixed": "#c1ecd4","inverse-on-surface": "#eff1ef","tertiary-container": "#513700",
+        "surface-variant": "#e1e3e1","surface-tint": "#3f6653","inverse-surface": "#2e3130",
+        "primary": "#012d1d","surface-container": "#eceeec","surface-container-high": "#e6e9e7",
+        "surface-container-low": "#f2f4f2","surface-container-lowest": "#ffffff",
+        "on-surface-variant": "#414844","on-primary-fixed-variant": "#274e3d",
+        "primary-container": "#1b4332","tertiary-fixed-dim": "#fdbb3d","on-background": "#191c1b",
+        "surface-bright": "#f8faf8","on-primary-fixed": "#002114","on-tertiary": "#ffffff",
+        "on-secondary-fixed": "#002113","on-tertiary-container": "#d99b1b","on-error": "#ffffff",
+        "tertiary-fixed": "#ffdeac","surface-container-highest": "#e1e3e1","secondary-fixed": "#92f7c3"
+      },
+      fontFamily: {"headline": ["Manrope"],"body": ["Manrope"],"label": ["Manrope"]},
+      borderRadius: {"DEFAULT": "0.25rem","lg": "0.5rem","xl": "0.75rem","full": "9999px"},
+    },
+  },
+}
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { font-family: 'Manrope', sans-serif; background: #f8faf8; }
+  .organic-bg { background-image: radial-gradient(circle at 20% 30%, rgba(146,247,195,0.08) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(27,67,50,0.05) 0%, transparent 40%); }
+  .glass-header { background: rgba(248,250,248,0.85); backdrop-filter: blur(20px); }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  [data-screen] { display: none; }
+  [data-screen].active { display: block; }
+  .chat-bubble-ai { background: #f2f4f2; border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; }
+  .chat-bubble-user { background: #1b4332; color: white; border-radius: 1.25rem 1.25rem 0.25rem 1.25rem; }
+  .confidence-ring { transform: rotate(-90deg); }
+  .typing-dot { animation: typing 1.4s ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+  .fade-in { animation: fadeIn 0.3s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .btn-primary { background: linear-gradient(135deg, #012d1d, #1b4332); color: white; border-radius: 0.75rem; font-weight: 700; transition: opacity 0.2s; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.97); }
+</style>
+</head>
+<body class="text-on-surface min-h-screen">
+
+<!-- ==================== SCREEN: ONBOARDING ==================== -->
+<div data-screen="onboarding" class="active">
+  <div class="min-h-screen flex flex-col items-center justify-between organic-bg relative overflow-hidden pb-8">
+    <div class="absolute inset-0 pointer-events-none opacity-5" style="background-image: url('https://www.transparenttextures.com/patterns/leaves.png'); background-repeat: repeat;"></div>
+    <main class="relative z-10 w-full max-w-md flex-1 flex flex-col items-center justify-center px-8 py-12">
+      <!-- Logo -->
+      <div class="flex flex-col items-center mb-16">
+        <div class="w-24 h-24 mb-6 relative flex items-center justify-center bg-primary-container rounded-[2rem] shadow-[0px_20px_40px_rgba(27,67,50,0.1)]">
+          <span class="material-symbols-outlined text-secondary-fixed text-6xl" style="font-variation-settings:'FILL' 1;">eco</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-30">
+            <span class="material-symbols-outlined text-white text-4xl">memory</span>
+          </div>
+        </div>
+        <h1 class="font-extrabold text-4xl tracking-tighter text-primary mb-2">AgriSense AI</h1>
+        <p class="text-on-primary-fixed-variant font-medium tracking-wide text-sm uppercase opacity-80">AI-Powered Crop Health</p>
+      </div>
+      <!-- Role Selection -->
+      <div class="w-full space-y-8 mb-12">
+        <div class="text-center space-y-2">
+          <h2 class="text-xl font-bold text-primary">Identify Your Role</h2>
+          <p class="text-on-surface-variant text-sm">Tailoring the laboratory to your expertise.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4">
+          <button onclick="selectRole('Farmer')" class="role-btn flex items-center p-5 bg-surface-container-lowest rounded-xl border border-transparent hover:border-secondary/20 hover:bg-white transition-all group shadow-sm">
+            <div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-on-secondary-fixed-variant">agriculture</span>
+            </div>
+            <div class="text-left"><span class="block font-bold text-primary">Farmer</span><span class="text-xs text-on-surface-variant">Daily crop monitoring & diagnostics</span></div>
+            <span class="material-symbols-outlined ml-auto text-outline-variant group-hover:text-secondary">chevron_right</span>
+          </button>
+          <button onclick="selectRole('Researcher')" class="role-btn flex items-center p-5 bg-surface-container-lowest rounded-xl border border-transparent hover:border-secondary/20 hover:bg-white transition-all group shadow-sm">
+            <div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-on-secondary-fixed-variant">science</span>
+            </div>
+            <div class="text-left"><span class="block font-bold text-primary">Researcher</span><span class="text-xs text-on-surface-variant">Deep data analysis & publication archives</span></div>
+            <span class="material-symbols-outlined ml-auto text-outline-variant group-hover:text-secondary">chevron_right</span>
+          </button>
+          <button onclick="selectRole('Student')" class="role-btn flex items-center p-5 bg-surface-container-lowest rounded-xl border border-transparent hover:border-secondary/20 hover:bg-white transition-all group shadow-sm">
+            <div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-on-secondary-fixed-variant">school</span>
+            </div>
+            <div class="text-left"><span class="block font-bold text-primary">Student</span><span class="text-xs text-on-surface-variant">Learn about diseases & agricultural AI</span></div>
+            <span class="material-symbols-outlined ml-auto text-outline-variant group-hover:text-secondary">chevron_right</span>
+          </button>
+        </div>
+      </div>
+      <!-- Insight Card -->
+      <div class="w-full bg-primary-container rounded-2xl p-6 relative overflow-hidden mb-10 shadow-xl">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] font-bold rounded-sm uppercase tracking-tighter">Live Insight</span>
+            <div class="h-1 w-1 bg-secondary-fixed rounded-full animate-pulse"></div>
+          </div>
+          <h3 class="text-white font-bold text-lg leading-tight mb-2">98.4% Accuracy in Pathogen Detection</h3>
+          <p class="text-primary-fixed-dim text-xs leading-relaxed">Join 15,000+ professionals using the Living Laboratory to optimize harvest yields globally.</p>
+        </div>
+      </div>
+      <!-- CTA -->
+      <div class="w-full flex flex-col items-center gap-4">
+        <button onclick="goToLogin()" class="w-full py-4 btn-primary shadow-[0px_15px_30px_rgba(1,45,29,0.25)] text-center">Get Started</button>
+        <p class="text-on-surface-variant text-[11px] font-medium">Already have an account? <a onclick="goToLogin()" class="text-secondary font-bold hover:underline cursor-pointer">Log In</a></p>
+      </div>
+    </main>
+    <footer class="w-full px-8 pb-4 flex items-center justify-between opacity-40">
+      <div class="h-[1px] flex-1 bg-outline-variant"></div>
+      <div class="px-4"><span class="material-symbols-outlined text-primary text-xl">potted_plant</span></div>
+      <div class="h-[1px] flex-1 bg-outline-variant"></div>
+    </footer>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: LOGIN ==================== -->
+<div data-screen="login">
+  <div class="min-h-screen flex flex-col items-center justify-center organic-bg px-6 py-12">
+    <div class="w-full max-w-md">
+      <div class="flex flex-col items-center mb-10">
+        <div class="w-16 h-16 mb-4 bg-primary-container rounded-2xl flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-secondary-fixed text-4xl" style="font-variation-settings:'FILL' 1;">eco</span>
+        </div>
+        <h1 class="font-extrabold text-3xl tracking-tighter text-primary">AgriSense AI</h1>
+        <p class="text-on-surface-variant text-sm mt-1">Sign in to your laboratory</p>
+      </div>
+      <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-[0px_20px_40px_rgba(27,67,50,0.06)]">
+        <div id="auth-error" class="hidden mb-4 p-3 bg-error-container text-on-error-container rounded-lg text-sm font-medium"></div>
+        <div id="auth-success" class="hidden mb-4 p-3 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg text-sm font-medium"></div>
+        <!-- Tabs -->
+        <div class="flex border-b border-outline-variant/20 mb-6">
+          <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 pb-3 text-sm font-bold text-primary border-b-2 border-secondary">Sign In</button>
+          <button id="tab-signup" onclick="switchAuthTab('signup')" class="flex-1 pb-3 text-sm font-medium text-on-surface-variant">Sign Up</button>
+        </div>
+        <!-- Login Form -->
+        <div id="form-login">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest mb-1.5">Email</label>
+              <input id="login-email" type="email" placeholder="you@agrisense.ai" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 text-sm font-medium focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 border-none"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest mb-1.5">Password</label>
+              <input id="login-password" type="password" placeholder="••••••••" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 text-sm font-medium focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 border-none"/>
+            </div>
+            <button onclick="handleLogin()" id="login-btn" class="w-full py-3.5 btn-primary mt-2">
+              <span id="login-btn-text">Sign In</span>
+            </button>
+          </div>
+          <div class="mt-4 text-center">
+            <button onclick="handleDemoLogin()" class="text-secondary text-sm font-semibold hover:underline">Use Demo Account</button>
+          </div>
+        </div>
+        <!-- Signup Form -->
+        <div id="form-signup" class="hidden">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest mb-1.5">Full Name</label>
+              <input id="signup-name" type="text" placeholder="Dr. Aris Thorne" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 text-sm font-medium focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 border-none"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest mb-1.5">Email</label>
+              <input id="signup-email" type="email" placeholder="you@agrisense.ai" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 text-sm font-medium focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 border-none"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest mb-1.5">Password</label>
+              <input id="signup-password" type="password" placeholder="••••••••" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant/50 text-sm font-medium focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 border-none"/>
+            </div>
+            <button onclick="handleSignup()" id="signup-btn" class="w-full py-3.5 btn-primary mt-2">Create Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: HOME DASHBOARD ==================== -->
+<div data-screen="dashboard">
+  <div class="min-h-screen pb-32">
+    <!-- Header -->
+    <header class="w-full top-0 sticky glass-header z-40">
+      <div class="flex items-center justify-between px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+          <button class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <h1 class="text-primary font-extrabold tracking-tighter text-2xl">AgriSense AI</h1>
+        </div>
+        <div onclick="navigateTo('profile')" class="cursor-pointer w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed bg-primary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary-container text-sm">person</span>
+        </div>
+      </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-8 space-y-12">
+      <!-- Greeting -->
+      <section class="space-y-2">
+        <p class="text-on-primary-fixed-variant font-medium tracking-wide text-[11px] uppercase" id="dash-date"></p>
+        <h2 class="text-primary font-extrabold text-4xl lg:text-5xl tracking-tight leading-tight" id="dash-greeting">Good morning, Dr. Aris Thorne</h2>
+        <p class="text-on-surface-variant max-w-2xl text-lg">Your precision agriculture insights are ready. Diagnose a crop or explore the community.</p>
+      </section>
+      <!-- Bento Grid -->
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div onclick="navigateTo('chatbot')" class="md:col-span-2 bg-primary-container rounded-xl p-8 flex flex-col justify-between group cursor-pointer overflow-hidden relative min-h-[220px] hover:opacity-95 transition-opacity">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50"></div>
+          <div class="relative z-10 flex justify-between items-start">
+            <div class="bg-secondary-fixed text-on-secondary-fixed-variant p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-3xl">search_check</span>
+            </div>
+            <span class="text-primary-fixed text-sm font-bold tracking-widest uppercase">Action</span>
+          </div>
+          <div class="relative z-10">
+            <h3 class="text-white font-bold text-2xl mb-2">Diagnose Crop</h3>
+            <p class="text-primary-fixed-dim text-sm">Upload or describe crop symptoms for instant AI pathology analysis.</p>
+          </div>
+        </div>
+        <div onclick="navigateTo('forum')" class="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_20px_40px_rgba(27,67,50,0.06)] flex flex-col justify-between hover:bg-surface-container transition-colors cursor-pointer min-h-[220px]">
+          <div class="bg-tertiary-fixed text-on-tertiary-fixed-variant w-12 h-12 flex items-center justify-center rounded-lg mb-4">
+            <span class="material-symbols-outlined">forum</span>
+          </div>
+          <div><h3 class="text-primary font-bold text-xl mb-1">Research Forum</h3><p class="text-on-surface-variant text-sm">Connect with global agronomists.</p></div>
+        </div>
+        <div onclick="navigateTo('papers')" class="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_20px_40px_rgba(27,67,50,0.06)] flex flex-col justify-between hover:bg-surface-container transition-colors cursor-pointer min-h-[220px]">
+          <div class="bg-primary-fixed text-on-primary-fixed-variant w-12 h-12 flex items-center justify-center rounded-lg mb-4">
+            <span class="material-symbols-outlined">description</span>
+          </div>
+          <div><h3 class="text-primary font-bold text-xl mb-1">Research Papers</h3><p class="text-on-surface-variant text-sm">Access peer-reviewed archives.</p></div>
+        </div>
+        <div class="md:col-span-4 bg-surface-container-low rounded-xl p-6 flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all">
+          <div class="flex items-center gap-6">
+            <div class="bg-secondary/10 text-secondary w-14 h-14 flex items-center justify-center rounded-full">
+              <span class="material-symbols-outlined text-2xl">menu_book</span>
+            </div>
+            <div><h3 class="text-primary font-bold text-xl">Knowledge Base</h3><p class="text-on-surface-variant">Access the latest peer-reviewed agricultural papers and disease documentation.</p></div>
+          </div>
+          <span class="material-symbols-outlined text-outline group-hover:translate-x-2 transition-transform">arrow_forward</span>
+        </div>
+      </section>
+      <!-- Recent Diagnoses from DB -->
+      <section class="space-y-6">
+        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+          <h3 class="text-primary font-bold text-2xl tracking-tight">Recent Diagnoses</h3>
+          <button onclick="loadDashboardActivity()" class="text-secondary font-semibold text-sm hover:underline">Refresh</button>
+        </div>
+        <div id="activity-feed" class="space-y-4">
+          <div class="text-center py-8 text-on-surface-variant text-sm">Loading your activity...</div>
+        </div>
+      </section>
+    </main>
+    <!-- FAB -->
+    <button onclick="navigateTo('chatbot')" class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-2xl shadow-2xl flex items-center justify-center active:scale-95 transition-transform z-40">
+      <span class="material-symbols-outlined" style="font-variation-settings:'wght' 600;">add</span>
+    </button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: AI CHATBOT ==================== -->
+<div data-screen="chatbot">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="w-full top-0 sticky z-50 glass-header">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex items-center gap-4">
+          <button onclick="navigateTo('dashboard')" class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div>
+            <h1 class="text-primary font-extrabold tracking-tighter text-xl">AI Crop Diagnostics</h1>
+            <p class="text-on-surface-variant text-xs font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block animate-pulse"></span>Powered by Grok AI</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="clearChat()" class="text-on-surface-variant hover:text-primary p-2 rounded-full hover:bg-surface-container transition-colors" title="Clear chat">
+            <span class="material-symbols-outlined text-sm">delete_sweep</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <!-- Chat area -->
+    <div id="chat-messages" class="flex-1 max-w-4xl mx-auto w-full px-4 pt-6 pb-48 space-y-6 overflow-y-auto no-scrollbar">
+      <!-- Welcome msg -->
+      <div class="flex items-start gap-3 fade-in">
+        <div class="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-white shrink-0 mt-1">
+          <span class="material-symbols-outlined text-sm">smart_toy</span>
+        </div>
+        <div class="max-w-[80%]">
+          <div class="chat-bubble-ai px-5 py-4 text-sm text-on-surface leading-relaxed">
+            <p class="font-bold text-primary mb-1">Welcome to AgriSense AI 🌿</p>
+            <p>I'm your precision agriculture assistant. Describe your crop's symptoms, mention the crop type and location, and I'll provide an AI-powered diagnosis with treatment recommendations.</p>
+            <p class="mt-2 text-on-surface-variant text-xs">Try: <em>"My tomato plants have dark spots with white mold on the leaves"</em></p>
+          </div>
+          <span class="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider px-2 mt-1 block">AgriSense AI</span>
+        </div>
+      </div>
+    </div>
+    <!-- Input Bar -->
+    <div class="fixed bottom-20 left-0 w-full px-4 flex justify-center z-40">
+      <div class="w-full max-w-2xl bg-surface-container-lowest/95 backdrop-blur-xl rounded-[1.5rem] shadow-2xl p-2 flex items-end gap-2 border border-outline-variant/20">
+        <div class="flex gap-1 pl-2 pb-1">
+          <label class="p-2.5 text-secondary hover:bg-secondary-container/30 rounded-full transition-colors cursor-pointer" title="Upload image">
+            <span class="material-symbols-outlined">photo_camera</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)"/>
+          </label>
+        </div>
+        <textarea id="chat-input" rows="1" placeholder="Describe symptoms or ask a question..." class="flex-grow bg-transparent border-none focus:ring-0 text-primary font-medium placeholder:text-on-surface-variant/50 text-sm py-3 resize-none max-h-32 overflow-y-auto" onkeydown="handleChatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button onclick="sendChatMessage()" id="send-btn" class="bg-primary text-white p-3 rounded-2xl hover:bg-primary-container transition-transform active:scale-95 shadow-md shrink-0 mb-1 disabled:opacity-50">
+          <span class="material-symbols-outlined">send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: DIAGNOSIS RESULT ==================== -->
+<div data-screen="diagnosis">
+  <div class="min-h-screen pb-32">
+    <header class="w-full top-0 sticky z-50 glass-header flex items-center justify-between px-6 py-4">
+      <div class="flex items-center gap-4">
+        <button onclick="navigateTo('chatbot')" class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <h1 class="font-bold tracking-tight text-2xl text-primary">Diagnosis Result</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="shareDiagnosis()" class="p-2 rounded-full hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-primary">share</span></button>
+        <button onclick="saveDiagnosis()" id="save-diag-btn" class="p-2 rounded-full hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-primary">bookmark</span></button>
+      </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-10 pb-32" id="diagnosis-content">
+      <!-- Populated by JS -->
+    </main>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: RESEARCH FORUM ==================== -->
+<div data-screen="forum">
+  <div class="min-h-screen pb-24">
+    <header class="w-full top-0 sticky z-50 glass-header flex items-center justify-between px-6 py-4">
+      <div class="flex items-center gap-4">
+        <button onclick="navigateTo('dashboard')" class="text-primary hover:bg-surface-container p-2 rounded-full">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <h1 class="font-extrabold tracking-tighter text-2xl text-primary">AgriSense AI</h1>
+      </div>
+      <button onclick="openNewPostModal()" class="bg-gradient-to-br from-primary to-primary-container text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">add</span> New Post
+      </button>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 pt-8 space-y-10">
+      <!-- Hero -->
+      <section class="relative overflow-hidden rounded-xl bg-primary-container h-56 flex items-end p-8 cursor-pointer shadow-[0px_20px_40px_rgba(27,67,50,0.06)]">
+        <div class="absolute inset-0 bg-gradient-to-t from-primary via-primary/40 to-transparent"></div>
+        <div class="relative z-10 space-y-2">
+          <div class="flex gap-2">
+            <span class="px-2 py-1 bg-error-container text-on-error-container text-[10px] font-bold rounded-sm uppercase tracking-wider">Critical Alert</span>
+            <span class="px-2 py-1 bg-white/10 backdrop-blur-md text-white text-[10px] font-bold rounded-sm uppercase tracking-wider">Sub-Saharan Africa</span>
+          </div>
+          <h3 class="text-2xl font-bold text-white leading-tight">Wheat Rust Outbreak in East Africa: Genetic Strain Analysis</h3>
+          <div class="flex items-center gap-4 text-white/70 text-sm font-medium pt-1">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 2h ago</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span> 1.2k reads</span>
+          </div>
+        </div>
+      </section>
+      <!-- Tabs -->
+      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-0">
+        <div class="flex gap-6">
+          <button id="forum-tab-expert" onclick="filterForumPosts('expert')" class="text-primary font-bold border-b-2 border-secondary pb-4">Expert Discussions</button>
+          <button id="forum-tab-recent" onclick="filterForumPosts('recent')" class="text-on-surface-variant font-medium pb-4 hover:text-primary transition-colors">Recent</button>
+        </div>
+        <button onclick="loadForumPosts()" class="p-2 hover:bg-surface-container rounded-lg transition-colors">
+          <span class="material-symbols-outlined text-on-surface-variant">refresh</span>
+        </button>
+      </div>
+      <div id="forum-posts" class="space-y-4">
+        <div class="text-center py-8 text-on-surface-variant text-sm">Loading forum...</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: RESEARCH PAPERS ==================== -->
+<div data-screen="papers">
+  <div class="min-h-screen pb-32">
+    <header class="w-full top-0 sticky z-40 glass-header flex items-center justify-between px-6 py-4">
+      <div class="flex items-center gap-4">
+        <button onclick="navigateTo('dashboard')" class="text-primary hover:bg-surface-container p-2 rounded-full">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <h1 class="text-primary font-extrabold tracking-tighter text-2xl">AgriSense AI</h1>
+      </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 pt-8">
+      <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="flex-1 max-w-2xl">
+          <h2 class="text-3xl font-extrabold text-primary tracking-tight mb-4">Research Archives</h2>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+            <input id="paper-search" type="text" placeholder="Search research papers..." oninput="filterPapers(this.value)" class="w-full pl-12 pr-4 py-4 bg-surface-container-low border-none rounded-xl focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary/20 transition-all text-on-surface placeholder:text-on-surface-variant/50 text-sm"/>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <div class="bg-secondary-fixed/20 px-4 py-2 rounded-lg text-on-secondary-fixed-variant text-sm font-semibold flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">book</span> 14,208 Papers
+          </div>
+        </div>
+      </div>
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-6 py-5 border-y border-outline-variant/10 mb-8">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest">Crop:</span>
+          <select id="paper-crop-filter" onchange="filterPapers()" class="bg-surface-container-high border-none rounded-md text-sm font-semibold text-primary px-3 py-1.5 focus:ring-2 focus:ring-secondary/30 cursor-pointer">
+            <option value="">All</option><option>Rice</option><option>Wheat</option><option>Maize</option><option>Soybean</option><option>Potato</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-on-primary-fixed-variant uppercase tracking-widest">Disease:</span>
+          <select id="paper-disease-filter" onchange="filterPapers()" class="bg-surface-container-high border-none rounded-md text-sm font-semibold text-primary px-3 py-1.5 focus:ring-2 focus:ring-secondary/30 cursor-pointer">
+            <option value="">All</option><option>Blast</option><option>Rust</option><option>Blight</option><option>Root Rot</option><option>Mildew</option>
+          </select>
+        </div>
+      </div>
+      <div id="papers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+        <div class="text-center py-8 text-on-surface-variant text-sm col-span-2">Loading research papers...</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: PROFILE ==================== -->
+<div data-screen="profile">
+  <div class="min-h-screen pb-24">
+    <header class="bg-surface flex items-center w-full px-6 h-16 sticky top-0 z-50">
+      <div class="flex items-center gap-4">
+        <button onclick="navigateTo('dashboard')" class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-200">arrow_back</button>
+        <h1 class="font-bold tracking-tight text-xl text-primary">Profile</h1>
+      </div>
+    </header>
+    <main class="max-w-screen-md mx-auto px-4 py-8 space-y-8">
+      <!-- Profile Identity -->
+      <section class="flex flex-col items-center text-center space-y-4">
+        <div class="relative">
+          <div class="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary">
+            <div class="w-full h-full rounded-full border-4 border-surface bg-primary-container flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-primary-container text-5xl">person</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight text-primary" id="profile-name">Dr. Aris Thorne</h2>
+          <p class="text-on-surface-variant font-medium" id="profile-role">Lead Agronomist</p>
+          <div class="flex items-center justify-center gap-1 mt-1 text-on-surface-variant text-sm">
+            <span class="material-symbols-outlined text-base">location_on</span>
+            <span>Verdant Valley Research Hub</span>
+          </div>
+        </div>
+      </section>
+      <!-- Stats -->
+      <section class="grid grid-cols-3 gap-4">
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_20px_40px_rgba(27,67,50,0.04)] text-center border border-outline-variant/10">
+          <p class="text-3xl font-extrabold text-primary" id="stat-diagnoses">0</p>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Diagnoses</p>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_20px_40px_rgba(27,67,50,0.04)] text-center border border-outline-variant/10">
+          <p class="text-3xl font-extrabold text-primary" id="stat-posts">0</p>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Posts</p>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_20px_40px_rgba(27,67,50,0.04)] text-center border border-outline-variant/10">
+          <p class="text-3xl font-extrabold text-primary" id="stat-saved">0</p>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Saved</p>
+        </div>
+      </section>
+      <!-- Options -->
+      <section class="bg-surface-container-low rounded-2xl p-2 space-y-1">
+        <div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-secondary-fixed/20 transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined">manage_accounts</span></div>
+            <div><h3 class="font-bold text-on-surface">Account Settings</h3><p class="text-xs text-on-surface-variant">Personal Info, Password</p></div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </div>
+        <div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-secondary-fixed/20 transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined">agriculture</span></div>
+            <div><h3 class="font-bold text-on-surface">Farm/Institute Details</h3><p class="text-xs text-on-surface-variant">Role, Organization</p></div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </div>
+        <div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-secondary-fixed/20 transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined">workspace_premium</span></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-on-surface">Subscription Plan</h3>
+                <span class="px-2 py-0.5 rounded-sm bg-secondary-fixed text-[10px] font-bold text-on-secondary-fixed-variant uppercase tracking-tighter">Premium</span>
+              </div>
+              <p class="text-xs text-on-surface-variant">Manage your billing and tier</p>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </div>
+        <div class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-secondary-fixed/20 transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined">settings_suggest</span></div>
+            <div><h3 class="font-bold text-on-surface">App Preferences</h3><p class="text-xs text-on-surface-variant">Notifications, Theme, Language</p></div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </div>
+        <div onclick="handleLogout()" class="group flex items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-error-container/30 transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center text-on-error-container"><span class="material-symbols-outlined">logout</span></div>
+            <div><h3 class="font-bold text-on-error-container">Sign Out</h3><p class="text-xs text-on-surface-variant">Log out of your account</p></div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== BOTTOM NAV (shared, shown on main screens) ==================== -->
+<nav id="bottom-nav" class="hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 backdrop-blur-md bg-surface/80 z-50 rounded-t-2xl shadow-[0px_-10px_30px_rgba(27,67,50,0.04)] border-t border-primary/5">
+  <button onclick="navigateTo('dashboard')" data-nav="dashboard" class="nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all">
+    <span class="material-symbols-outlined">home</span>
+    <span class="text-[10px] font-semibold uppercase tracking-wider mt-1">Home</span>
+  </button>
+  <button onclick="navigateTo('chatbot')" data-nav="chatbot" class="nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all">
+    <span class="material-symbols-outlined">smart_toy</span>
+    <span class="text-[10px] font-semibold uppercase tracking-wider mt-1">Chatbot</span>
+  </button>
+  <button onclick="navigateTo('forum')" data-nav="forum" class="nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all">
+    <span class="material-symbols-outlined">forum</span>
+    <span class="text-[10px] font-semibold uppercase tracking-wider mt-1">Forum</span>
+  </button>
+  <button onclick="navigateTo('papers')" data-nav="papers" class="nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all">
+    <span class="material-symbols-outlined">description</span>
+    <span class="text-[10px] font-semibold uppercase tracking-wider mt-1">Papers</span>
+  </button>
+  <button onclick="navigateTo('profile')" data-nav="profile" class="nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all">
+    <span class="material-symbols-outlined">person</span>
+    <span class="text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
+  </button>
+</nav>
+
+<!-- ==================== NEW POST MODAL ==================== -->
+<div id="new-post-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-primary/40 backdrop-blur-sm" onclick="closeNewPostModal()"></div>
+  <div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-t-3xl p-6 pb-10 space-y-4 shadow-2xl fade-in">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-xl font-bold text-primary">New Forum Post</h3>
+      <button onclick="closeNewPostModal()" class="p-2 rounded-full hover:bg-surface-container"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+    </div>
+    <input id="post-title" type="text" placeholder="Post title..." class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface text-sm font-medium placeholder:text-on-surface-variant/50 border-none focus:outline-none focus:ring-1 focus:ring-primary/20"/>
+    <textarea id="post-body" rows="4" placeholder="Describe your observation, question, or finding..." class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface text-sm font-medium placeholder:text-on-surface-variant/50 border-none focus:outline-none focus:ring-1 focus:ring-primary/20 resize-none"></textarea>
+    <input id="post-tags" type="text" placeholder="Tags (comma separated, e.g. Rice Blast, Organic)" class="w-full px-4 py-3 bg-surface-container-low rounded-xl text-on-surface text-sm font-medium placeholder:text-on-surface-variant/50 border-none focus:outline-none focus:ring-1 focus:ring-primary/20"/>
+    <button onclick="submitForumPost()" class="w-full py-3.5 btn-primary">Publish Post</button>
+  </div>
+</div>
+
+<!-- ==================== TOAST ==================== -->
+<div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-xl fade-in"></div>
+
+<script>
+// ===================== CONFIG =====================
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const GROK_API_KEY = 'YOUR_GROK_API_KEY';
+const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+
+// ===================== SUPABASE INIT =====================
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===================== STATE =====================
+let currentScreen = 'onboarding';
+let currentUser = null;
+let selectedRole = null;
+let chatHistory = [];
+let currentDiagnosis = null;
+let forumPosts = [];
+let allPapers = [];
+
+// ===================== NAVIGATION =====================
+function navigateTo(screen) {
+  document.querySelectorAll('[data-screen]').forEach(s => s.classList.remove('active'));
+  const el = document.querySelector(`[data-screen="${screen}"]`);
+  if (el) { el.classList.add('active'); el.scrollTop = 0; window.scrollTo(0,0); }
+  currentScreen = screen;
+  const navScreens = ['dashboard','chatbot','forum','papers','profile'];
+  const nav = document.getElementById('bottom-nav');
+  if (navScreens.includes(screen)) {
+    nav.classList.remove('hidden');
+    nav.classList.add('flex');
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(item => {
+      const isActive = item.dataset.nav === screen;
+      item.className = `nav-item flex flex-col items-center justify-center px-4 py-1.5 transition-all ${isActive ? 'bg-primary-fixed text-on-secondary-fixed-variant rounded-xl' : 'text-on-surface-variant opacity-70 hover:opacity-100 hover:text-secondary'}`;
+    });
+  } else {
+    nav.classList.add('hidden');
+    nav.classList.remove('flex');
+  }
+  // Screen-specific init
+  if (screen === 'dashboard') initDashboard();
+  if (screen === 'forum') loadForumPosts();
+  if (screen === 'papers') loadPapers();
+  if (screen === 'profile') loadProfile();
+}
+
+// ===================== ONBOARDING =====================
+function selectRole(role) {
+  selectedRole = role;
+  localStorage.setItem('agrisense_role', role);
+  navigateTo('login');
+}
+
+function goToLogin() { navigateTo('login'); }
+
+// ===================== AUTH =====================
+function switchAuthTab(tab) {
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-signup').classList.toggle('hidden', tab !== 'signup');
+  document.getElementById('tab-login').className = `flex-1 pb-3 text-sm ${tab==='login'?'font-bold text-primary border-b-2 border-secondary':'font-medium text-on-surface-variant'}`;
+  document.getElementById('tab-signup').className = `flex-1 pb-3 text-sm ${tab==='signup'?'font-bold text-primary border-b-2 border-secondary':'font-medium text-on-surface-variant'}`;
+  clearAuthMessages();
+}
+
+function clearAuthMessages() {
+  document.getElementById('auth-error').classList.add('hidden');
+  document.getElementById('auth-success').classList.add('hidden');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+function showAuthSuccess(msg) {
+  const el = document.getElementById('auth-success');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return showAuthError('Please enter email and password.');
+  clearAuthMessages();
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; document.getElementById('login-btn-text').textContent = 'Signing in...';
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    await loadUserProfile();
+    navigateTo('dashboard');
+  } catch (e) {
+    showAuthError(e.message || 'Login failed. Please try again.');
+  } finally {
+    btn.disabled = false; document.getElementById('login-btn-text').textContent = 'Sign In';
+  }
+}
+
+async function handleDemoLogin() {
+  // Use a demo account
+  document.getElementById('login-email').value = 'demo@agrisense.ai';
+  document.getElementById('login-password').value = 'demo123456';
+  // Try to sign in; if fails, sign up first
+  clearAuthMessages();
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  try {
+    let { data, error } = await sb.auth.signInWithPassword({ email: 'demo@agrisense.ai', password: 'demo123456' });
+    if (error) {
+      // Create demo account
+      const res = await sb.auth.signUp({ email: 'demo@agrisense.ai', password: 'demo123456', options: { data: { full_name: 'Dr. Aris Thorne', role: 'Researcher' } } });
+      if (res.error) throw res.error;
+      currentUser = res.data.user;
+    } else {
+      currentUser = data.user;
+    }
+    await loadUserProfile();
+    navigateTo('dashboard');
+  } catch (e) {
+    showAuthError('Demo login failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if (!name || !email || !password) return showAuthError('Please fill in all fields.');
+  if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
+  clearAuthMessages();
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  try {
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name, role: selectedRole || 'Farmer' } } });
+    if (error) throw error;
+    if (data.user && !data.session) {
+      showAuthSuccess('Account created! Check your email to verify, then sign in.');
+    } else {
+      currentUser = data.user;
+      await loadUserProfile();
+      navigateTo('dashboard');
+    }
+  } catch (e) {
+    showAuthError(e.message || 'Signup failed.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Account';
+  }
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  currentUser = null; chatHistory = [];
+  navigateTo('onboarding');
+}
+
+async function loadUserProfile() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (data) currentUser.profile = data;
+  } catch (e) { /* profile may not exist yet */ }
+}
+
+// ===================== DASHBOARD =====================
+function initDashboard() {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('dash-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const name = currentUser?.user_metadata?.full_name || currentUser?.profile?.full_name || 'Agronomist';
+  document.getElementById('dash-greeting').textContent = `${greeting}, ${name}`;
+  loadDashboardActivity();
+}
+
+async function loadDashboardActivity() {
+  const feed = document.getElementById('activity-feed');
+  if (!currentUser) {
+    feed.innerHTML = renderSampleActivity();
+    return;
+  }
+  feed.innerHTML = '<div class="text-center py-4 text-on-surface-variant text-sm">Loading...</div>';
+  try {
+    const { data } = await sb.from('diagnoses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5);
+    if (!data || data.length === 0) {
+      feed.innerHTML = `
+        <div class="bg-surface-container-low rounded-xl p-6 text-center space-y-2">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant">eco</span>
+          <p class="font-bold text-primary">No diagnoses yet</p>
+          <p class="text-on-surface-variant text-sm">Start by chatting with the AI to diagnose your first crop.</p>
+          <button onclick="navigateTo('chatbot')" class="mt-2 px-4 py-2 btn-primary text-sm">Start Diagnosis</button>
+        </div>`;
+    } else {
+      feed.innerHTML = data.map(d => renderActivityItem(d)).join('');
+    }
+  } catch (e) {
+    feed.innerHTML = renderSampleActivity();
+  }
+}
+
+function renderActivityItem(d) {
+  const severity = d.severity || 'Mild';
+  const severityClass = severity === 'Severe' ? 'bg-error-container text-on-error-container' : severity === 'Moderate' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-secondary-fixed text-on-secondary-fixed-variant';
+  const date = new Date(d.created_at);
+  const timeAgo = getTimeAgo(date);
+  return `
+    <div class="bg-surface-container-lowest p-5 rounded-xl flex items-center gap-5 shadow-[0px_4px_12px_rgba(27,67,50,0.02)] border border-outline-variant/10 cursor-pointer hover:shadow-md transition-shadow" onclick="viewDiagnosis(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+      <div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-on-primary-fixed-variant">search_check</span>
+      </div>
+      <div class="flex-grow">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2 py-0.5 ${severityClass} text-[10px] font-bold rounded-sm uppercase tracking-tighter">${severity}</span>
+          <span class="text-on-surface-variant text-xs">${timeAgo}</span>
+        </div>
+        <h4 class="text-primary font-bold">${d.disease_name || 'Unknown Condition'}</h4>
+        <p class="text-on-surface-variant text-sm">${d.crop_type || 'Unknown crop'} • ${Math.round((d.confidence || 0.9) * 100)}% confidence</p>
+      </div>
+      <span class="material-symbols-outlined text-outline">chevron_right</span>
+    </div>`;
+}
+
+function renderSampleActivity() {
+  const samples = [
+    { disease_name: 'Late Blight', crop_type: 'Tomato', severity: 'Severe', created_at: new Date(Date.now()-7200000).toISOString(), confidence: 0.94 },
+    { disease_name: 'Rice Blast', crop_type: 'Rice', severity: 'Moderate', created_at: new Date(Date.now()-18000000).toISOString(), confidence: 0.88 },
+    { disease_name: 'Healthy Growth', crop_type: 'Soybean', severity: 'Mild', created_at: new Date(Date.now()-86400000).toISOString(), confidence: 0.98 },
+  ];
+  return samples.map(d => renderActivityItem(d)).join('');
+}
+
+function getTimeAgo(date) {
+  const diff = Date.now() - date.getTime();
+  if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+  return `${Math.floor(diff/86400000)}d ago`;
+}
+
+// ===================== CHATBOT & GROK AI =====================
+function clearChat() {
+  chatHistory = [];
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = `
+    <div class="flex items-start gap-3 fade-in">
+      <div class="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-white shrink-0 mt-1">
+        <span class="material-symbols-outlined text-sm">smart_toy</span>
+      </div>
+      <div class="max-w-[80%]">
+        <div class="chat-bubble-ai px-5 py-4 text-sm text-on-surface leading-relaxed">
+          <p class="font-bold text-primary mb-1">Welcome to AgriSense AI 🌿</p>
+          <p>I'm your precision agriculture assistant. Describe your crop's symptoms and I'll provide an AI-powered diagnosis.</p>
+        </div>
+      </div>
+    </div>`;
+  showToast('Chat cleared');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+}
+
+function handleChatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+}
+
+async function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const imageData = e.target.result;
+    appendUserMessage(`[Uploaded image: ${file.name}]`, imageData);
+    sendChatMessage(`Please analyze this uploaded crop image and diagnose any diseases or issues you can detect.`, imageData);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function sendChatMessage(overrideText, imageData) {
+  const input = document.getElementById('chat-input');
+  const text = overrideText || input.value.trim();
+  if (!text && !imageData) return;
+  if (!overrideText) { appendUserMessage(text); input.value = ''; autoResize(input); }
+  const typingId = appendTypingIndicator();
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  chatHistory.push({ role: 'user', content: text });
+  try {
+    const response = await callGrokAPI(text, imageData);
+    removeTypingIndicator(typingId);
+    appendAIMessage(response);
+    chatHistory.push({ role: 'assistant', content: response });
+    // Check if diagnosis was made
+    if (response.includes('**Disease:') || response.includes('Diagnosis:') || response.includes('detected') || response.includes('blight') || response.includes('rust') || response.includes('blast') || response.includes('rot')) {
+      const diagData = parseDiagnosisFromResponse(response, text);
+      currentDiagnosis = diagData;
+      await saveDiagnosisToDb(diagData);
+      appendViewDiagnosisButton();
+    }
+  } catch (e) {
+    removeTypingIndicator(typingId);
+    appendAIMessage(`I encountered an error: ${e.message}. Please try again.`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function callGrokAPI(userMessage, imageData) {
+  const systemPrompt = `You are AgriSense AI, an expert agricultural pathologist and crop disease diagnostician powered by the latest agronomy research. When a user describes crop symptoms:
+
+1. Identify the most likely disease(s) with scientific names
+2. Assess severity (Mild/Moderate/Severe)
+3. Provide confidence percentage
+4. Give immediate, 48-hour, and preventive treatment protocols
+5. Mention weather/environmental factors if relevant
+
+Format your response with clear sections. Use **bold** for disease names. Include specific fungicides, pesticides, or organic alternatives. Be precise and actionable. 
+
+If the symptoms are unclear, ask targeted questions. Always mention the affected plant parts, pathogen type (fungal/bacterial/viral), and spread risk.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...chatHistory.slice(-8).filter(m => m.role === 'user' || m.role === 'assistant').slice(0, -1),
+    { role: 'user', content: userMessage }
+  ];
+
+  const body = {
+    model: 'grok-3-latest',
+    messages,
+    max_tokens: 1024,
+    temperature: 0.3
+  };
+
+  const res = await fetch(GROK_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROK_API_KEY}` },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+function parseDiagnosisFromResponse(response, query) {
+  const diseaseMatch = response.match(/\*\*([^*]+)\*\*/);
+  const severityMatch = response.match(/Severity[:\s]*(Mild|Moderate|Severe)/i) || response.match(/(Mild|Moderate|Severe)/i);
+  const confMatch = response.match(/(\d{1,3})%\s*(confidence|match|accuracy)/i);
+  const cropMatch = query.match(/\b(tomato|rice|wheat|maize|corn|potato|soybean|cotton|banana|mango|sugarcane)\b/i);
+  return {
+    disease_name: diseaseMatch ? diseaseMatch[1].replace(/\*\*/g,'').trim() : 'Crop Disease Detected',
+    severity: severityMatch ? (severityMatch[1] || 'Moderate') : 'Moderate',
+    confidence: confMatch ? parseInt(confMatch[1]) / 100 : 0.88,
+    crop_type: cropMatch ? (cropMatch[1].charAt(0).toUpperCase() + cropMatch[1].slice(1)) : 'Unknown',
+    description: response,
+    query
+  };
+}
+
+async function saveDiagnosisToDb(diagData) {
+  if (!currentUser) return;
+  try {
+    await sb.from('diagnoses').insert({
+      user_id: currentUser.id,
+      disease_name: diagData.disease_name,
+      severity: diagData.severity,
+      confidence: diagData.confidence,
+      crop_type: diagData.crop_type,
+      description: diagData.description,
+      query: diagData.query,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) { /* silent fail */ }
+}
+
+function appendUserMessage(text, imageData) {
+  const msgs = document.getElementById('chat-messages');
+  const imgHtml = imageData ? `<div class="mb-2 rounded-xl overflow-hidden max-w-[200px]"><img src="${imageData}" class="w-full object-cover rounded-xl"/></div>` : '';
+  msgs.innerHTML += `
+    <div class="flex flex-col items-end space-y-2 fade-in">
+      ${imgHtml}
+      <div class="chat-bubble-user px-5 py-3 max-w-[80%]">
+        <p class="text-sm font-medium">${escapeHtml(text)}</p>
+      </div>
+    </div>`;
+  scrollChatToBottom();
+}
+
+function appendAIMessage(text) {
+  const msgs = document.getElementById('chat-messages');
+  const formatted = formatAIMessage(text);
+  msgs.innerHTML += `
+    <div class="flex items-start gap-3 fade-in">
+      <div class="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-white shrink-0 mt-1">
+        <span class="material-symbols-outlined text-sm">smart_toy</span>
+      </div>
+      <div class="max-w-[85%]">
+        <div class="chat-bubble-ai px-5 py-4 text-sm text-on-surface leading-relaxed">${formatted}</div>
+        <span class="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider px-2 mt-1 block">AgriSense AI</span>
+      </div>
+    </div>`;
+  scrollChatToBottom();
+}
+
+function appendViewDiagnosisButton() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `
+    <div class="fade-in flex justify-center">
+      <button onclick="navigateTo('diagnosis')" class="btn-primary px-6 py-3 text-sm flex items-center gap-2 shadow-lg">
+        <span class="material-symbols-outlined text-sm">analytics</span> View Full Diagnosis Report
+      </button>
+    </div>`;
+  scrollChatToBottom();
+  renderDiagnosisScreen(currentDiagnosis);
+}
+
+function appendTypingIndicator() {
+  const id = 'typing-' + Date.now();
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `
+    <div id="${id}" class="flex items-start gap-3 fade-in">
+      <div class="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-white shrink-0">
+        <span class="material-symbols-outlined text-sm">smart_toy</span>
+      </div>
+      <div class="chat-bubble-ai px-5 py-4 flex items-center gap-1">
+        <span class="typing-dot w-2 h-2 bg-on-surface-variant rounded-full inline-block"></span>
+        <span class="typing-dot w-2 h-2 bg-on-surface-variant rounded-full inline-block"></span>
+        <span class="typing-dot w-2 h-2 bg-on-surface-variant rounded-full inline-block"></span>
+      </div>
+    </div>`;
+  scrollChatToBottom();
+  return id;
+}
+
+function removeTypingIndicator(id) {
+  document.getElementById(id)?.remove();
+}
+
+function scrollChatToBottom() {
+  const msgs = document.getElementById('chat-messages');
+  setTimeout(() => msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' }), 100);
+}
+
+function formatAIMessage(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="text-primary">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h4 class="font-bold text-primary mt-3 mb-1">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 class="font-bold text-primary mt-3 mb-1 text-base">$1</h3>')
+    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+    .replace(/(<li.*<\/li>)+/gs, m => `<ul class="space-y-1 my-2">${m}</ul>`)
+    .replace(/\n\n/g, '</p><p class="mt-2">')
+    .replace(/\n/g, '<br/>');
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===================== DIAGNOSIS SCREEN =====================
+function renderDiagnosisScreen(diag) {
+  if (!diag) return;
+  const content = document.getElementById('diagnosis-content');
+  const severity = diag.severity || 'Moderate';
+  const severityClass = severity === 'Severe' ? 'bg-error-container text-on-error-container border-error' : severity === 'Moderate' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim' : 'bg-secondary-fixed text-on-secondary-fixed-variant border-secondary';
+  const conf = Math.round((diag.confidence || 0.88) * 100);
+  const circumference = 2 * Math.PI * 44;
+  const dashOffset = circumference - (conf / 100) * circumference;
+  const formattedDesc = formatAIMessage(diag.description || '');
+  content.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="lg:col-span-8 space-y-8">
+        <!-- Main Card -->
+        <div class="bg-surface-container-lowest rounded-3xl p-8 shadow-[0px_20px_40px_rgba(27,67,50,0.06)] border border-outline-variant/10">
+          <div class="flex flex-col gap-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-1">
+                <p class="text-on-surface-variant font-semibold tracking-wider text-[10px] uppercase">Detected Condition</p>
+                <h2 class="text-4xl font-extrabold tracking-tight text-primary leading-none">${diag.disease_name}</h2>
+                ${diag.crop_type ? `<p class="text-on-primary-fixed-variant font-medium text-lg opacity-80">${diag.crop_type}</p>` : ''}
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <span class="px-4 py-1.5 rounded-sm font-bold text-xs uppercase tracking-widest ${severityClass}">${severity}</span>
+              </div>
+            </div>
+            <!-- AI Analysis -->
+            <div class="bg-surface-container-low rounded-xl p-6">
+              <p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">AI Analysis</p>
+              <div class="text-sm text-on-surface leading-relaxed">${formattedDesc}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Treatment Protocol -->
+        <div class="space-y-4">
+          <h3 class="text-2xl font-bold text-primary tracking-tight">Treatment Protocol</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border-l-4 border-error space-y-3">
+              <div class="flex items-center gap-3"><span class="material-symbols-outlined text-error">priority_high</span><h4 class="font-bold text-primary">Immediate</h4></div>
+              <ul class="space-y-2 text-sm text-on-surface-variant">
+                <li class="flex gap-2"><span class="text-error">•</span><span>Remove and isolate all visibly infected plant material.</span></li>
+                <li class="flex gap-2"><span class="text-error">•</span><span>Avoid overhead irrigation to reduce humidity and spore spread.</span></li>
+              </ul>
+            </div>
+            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border-l-4 border-tertiary-fixed-dim space-y-3">
+              <div class="flex items-center gap-3"><span class="material-symbols-outlined text-tertiary-fixed-dim">schedule</span><h4 class="font-bold text-primary">Within 48h</h4></div>
+              <ul class="space-y-2 text-sm text-on-surface-variant">
+                <li class="flex gap-2"><span class="text-tertiary-fixed-dim">•</span><span>Apply appropriate fungicide/bactericide across the affected sector.</span></li>
+                <li class="flex gap-2"><span class="text-tertiary-fixed-dim">•</span><span>Monitor neighboring crops for early signs of spread.</span></li>
+              </ul>
+            </div>
+            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border-l-4 border-secondary space-y-3">
+              <div class="flex items-center gap-3"><span class="material-symbols-outlined text-secondary">shield</span><h4 class="font-bold text-primary">Preventive</h4></div>
+              <ul class="space-y-2 text-sm text-on-surface-variant">
+                <li class="flex gap-2"><span class="text-secondary">•</span><span>Implement crop rotation with non-host species.</span></li>
+                <li class="flex gap-2"><span class="text-secondary">•</span><span>Improve soil drainage and aeration to reduce pathogen persistence.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Right Column -->
+      <div class="lg:col-span-4 space-y-6">
+        <!-- Confidence Score -->
+        <div class="bg-primary-container text-white p-8 rounded-3xl flex flex-col items-center text-center space-y-4">
+          <h4 class="text-sm font-bold uppercase tracking-[0.2em] text-on-primary-container">Confidence Score</h4>
+          <div class="relative w-36 h-36">
+            <svg class="w-full h-full confidence-ring" viewBox="0 0 100 100">
+              <circle class="text-white/10 stroke-current" cx="50" cy="50" fill="transparent" r="44" stroke-width="6"></circle>
+              <circle cx="50" cy="50" fill="transparent" r="44" stroke="url(#diagGradient)" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" stroke-linecap="round" stroke-width="6"></circle>
+              <defs><linearGradient id="diagGradient" x1="0%" x2="100%" y1="0%" y2="100%"><stop offset="0%" style="stop-color:#006c48"/><stop offset="100%" style="stop-color:#92f7c3"/></linearGradient></defs>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-4xl font-extrabold">${conf}<span class="text-xl">%</span></span>
+              <span class="text-[10px] uppercase font-bold opacity-70">AI Precision</span>
+            </div>
+          </div>
+          <p class="text-sm text-primary-fixed-dim">Neural network analysis based on 12,000+ plant pathology samples.</p>
+        </div>
+        <!-- Actions -->
+        <div class="space-y-3">
+          <button onclick="navigateTo('chatbot')" class="w-full bg-gradient-to-r from-primary to-primary-container text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 shadow-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined">chat</span> Continue Diagnosis
+          </button>
+          <button onclick="saveDiagnosis()" class="w-full bg-surface-container-low text-primary py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-surface-container transition-colors border border-outline-variant/20">
+            <span class="material-symbols-outlined">bookmark</span> Save Report
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function viewDiagnosis(diagData) {
+  currentDiagnosis = diagData;
+  renderDiagnosisScreen(diagData);
+  navigateTo('diagnosis');
+}
+
+async function saveDiagnosis() {
+  if (!currentDiagnosis || !currentUser) { showToast('Sign in to save diagnoses'); return; }
+  await saveDiagnosisToDb(currentDiagnosis);
+  showToast('Diagnosis saved successfully!');
+  document.getElementById('save-diag-btn').querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
+}
+
+function shareDiagnosis() {
+  const text = currentDiagnosis ? `AgriSense AI Diagnosis: ${currentDiagnosis.disease_name} (${currentDiagnosis.severity}) - ${Math.round((currentDiagnosis.confidence||0.88)*100)}% confidence` : 'AgriSense AI Diagnosis';
+  if (navigator.share) { navigator.share({ title: 'AgriSense AI', text }); }
+  else { navigator.clipboard.writeText(text).then(() => showToast('Diagnosis copied to clipboard!')); }
+}
+
+// ===================== FORUM =====================
+const SAMPLE_POSTS = [
+  { id: 1, title: 'Best organic treatments for Rice Blast? Seeking field-tested botanical fungicides.', author: 'Dr. Aris Thorne', author_role: 'Expert', tags: ['Rice Blast','Organic','Mycology'], upvotes: 45, replies: 12, created_at: new Date(Date.now()-14400000).toISOString(), user_id: 'sample' },
+  { id: 2, title: 'Observed resistance to Chlorothalonil in local Potato Late Blight samples. Anyone else?', author: 'Elena Vance', author_role: 'Researcher', tags: ['Late Blight','Fungicides','Potato'], upvotes: 28, replies: 8, created_at: new Date(Date.now()-25200000).toISOString(), user_id: 'sample' },
+  { id: 3, title: 'Drone-based multispectral imaging for early Rust detection — results from our trial', author: 'Arnav Mishra', author_role: 'Researcher', tags: ['Remote Sensing','Wheat Rust','Tech'], upvotes: 67, replies: 19, created_at: new Date(Date.now()-86400000).toISOString(), user_id: 'sample' },
+  { id: 4, title: 'Maize Stalk Borer management with neem-based solutions — 3 year data', author: 'Priya Sharma', author_role: 'Farmer', tags: ['Maize','Organic','IPM'], upvotes: 33, replies: 7, created_at: new Date(Date.now()-172800000).toISOString(), user_id: 'sample' },
+];
+
+let currentForumFilter = 'expert';
+
+async function loadForumPosts() {
+  const container = document.getElementById('forum-posts');
+  container.innerHTML = '<div class="text-center py-6 text-on-surface-variant text-sm">Loading posts...</div>';
+  try {
+    const { data } = await sb.from('forum_posts').select('*').order('created_at', { ascending: false }).limit(20);
+    forumPosts = (data && data.length) ? [...data, ...SAMPLE_POSTS] : SAMPLE_POSTS;
+  } catch (e) {
+    forumPosts = SAMPLE_POSTS;
+  }
+  renderForumPosts();
+}
+
+function filterForumPosts(tab) {
+  currentForumFilter = tab;
+  document.getElementById('forum-tab-expert').className = `font-${tab==='expert'?'bold text-primary border-b-2 border-secondary':'medium text-on-surface-variant hover:text-primary'} pb-4`;
+  document.getElementById('forum-tab-recent').className = `font-${tab==='recent'?'bold text-primary border-b-2 border-secondary':'medium text-on-surface-variant hover:text-primary'} pb-4`;
+  renderForumPosts();
+}
+
+function renderForumPosts() {
+  const container = document.getElementById('forum-posts');
+  let posts = [...forumPosts];
+  if (currentForumFilter === 'expert') posts = posts.filter(p => p.author_role === 'Expert' || p.author_role === 'Researcher');
+  container.innerHTML = posts.map(p => `
+    <article class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_4px_20px_rgba(27,67,50,0.03)] hover:shadow-[0px_10px_30px_rgba(27,67,50,0.06)] transition-all cursor-pointer group">
+      <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex-1 space-y-4">
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-xs font-bold text-on-primary-fixed-variant">${(p.author||'U').charAt(0)}</div>
+            <span class="text-sm font-bold text-primary">${p.author || 'Anonymous'}</span>
+            ${p.author_role === 'Expert' || p.author_role === 'Researcher' ? `<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-extrabold rounded-sm uppercase tracking-tighter">${p.author_role}</span>` : ''}
+            <span class="text-xs text-on-surface-variant ml-auto">${getTimeAgo(new Date(p.created_at))}</span>
+          </div>
+          <h4 class="text-lg font-bold text-primary group-hover:text-secondary transition-colors leading-snug">${escapeHtml(p.title)}</h4>
+          <div class="flex flex-wrap gap-2">
+            ${(p.tags || []).map(t => `<span class="px-2 py-1 bg-surface-container-low text-on-surface-variant text-[11px] font-semibold rounded-sm"># ${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="flex md:flex-col justify-start md:justify-center items-center gap-6 md:border-l md:border-outline-variant/20 md:pl-8">
+          <button onclick="upvotePost(${p.id})" class="flex flex-col items-center hover:text-secondary transition-colors">
+            <span class="material-symbols-outlined text-secondary">arrow_drop_up</span>
+            <span class="text-lg font-bold text-primary leading-none">${p.upvotes || 0}</span>
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Upvotes</span>
+          </button>
+          <div class="flex flex-col items-center">
+            <span class="material-symbols-outlined text-on-surface-variant opacity-40">chat_bubble</span>
+            <span class="text-lg font-bold text-primary leading-none">${p.replies || 0}</span>
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Replies</span>
+          </div>
+        </div>
+      </div>
+    </article>`).join('') || '<div class="text-center py-8 text-on-surface-variant">No posts yet. Be the first to post!</div>';
+}
+
+async function upvotePost(postId) {
+  forumPosts = forumPosts.map(p => p.id === postId ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p);
+  renderForumPosts();
+  try { await sb.from('forum_posts').update({ upvotes: forumPosts.find(p=>p.id===postId)?.upvotes }).eq('id', postId); } catch(e){}
+}
+
+function openNewPostModal() {
+  if (!currentUser) { showToast('Please sign in to post'); return; }
+  document.getElementById('new-post-modal').classList.remove('hidden');
+}
+function closeNewPostModal() {
+  document.getElementById('new-post-modal').classList.add('hidden');
+}
+
+async function submitForumPost() {
+  const title = document.getElementById('post-title').value.trim();
+  const body = document.getElementById('post-body').value.trim();
+  const tagsRaw = document.getElementById('post-tags').value.trim();
+  if (!title) { showToast('Please add a title'); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const newPost = {
+    title, body, tags,
+    author: currentUser?.user_metadata?.full_name || 'Anonymous',
+    author_role: selectedRole || 'Farmer',
+    upvotes: 0, replies: 0,
+    user_id: currentUser?.id,
+    created_at: new Date().toISOString()
+  };
+  try {
+    const { data, error } = await sb.from('forum_posts').insert(newPost).select().single();
+    if (error) throw error;
+    forumPosts.unshift(data || { ...newPost, id: Date.now() });
+  } catch (e) {
+    forumPosts.unshift({ ...newPost, id: Date.now() });
+  }
+  renderForumPosts();
+  closeNewPostModal();
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-body').value = '';
+  document.getElementById('post-tags').value = '';
+  showToast('Post published!');
+}
+
+// ===================== PAPERS =====================
+const SAMPLE_PAPERS = [
+  { id: 1, title: 'Climate Resilient Rice Cultivation in Southeast Asia', authors: 'Prof. Liang et al.', year: 2024, tags: ['Climate Change','Rice'], abstract: 'Study on the effects of rising temperatures on rice yields, proposing new stress-tolerant genetic variations and optimized irrigation protocols to mitigate harvest losses in tropical corridors.', saved: false },
+  { id: 2, title: 'Predictive Modeling of Wheat Rust Spore Dispersion', authors: 'Dr. M. Osei et al.', year: 2024, tags: ['AI Analysis','Wheat'], abstract: 'Integrating satellite telemetry and localized humidity sensors to provide 72-hour early warning systems for Wheat Rust outbreaks across sub-Saharan agricultural zones.', saved: true },
+  { id: 3, title: 'CRISPR-Based Resistance to Phytophthora infestans in Solanaceae', authors: 'Torres & Nakamura', year: 2023, tags: ['Genomics','Potato'], abstract: 'Novel gene-editing approach targeting late blight resistance genes in potato and tomato lines showing 89% field efficacy against Phytophthora infestans isolates.', saved: false },
+  { id: 4, title: 'Neem-Based Biopesticides: Efficacy Against Maize Stem Borers', authors: 'Adeyemi et al.', year: 2023, tags: ['Organic','Maize'], abstract: 'Three-year multi-location trial demonstrating effectiveness of neem oil formulations against first and second instar larvae of Busseola fusca and Chilo partellus.', saved: false },
+  { id: 5, title: 'Soil Microbiome Diversity and Its Role in Suppressing Fusarium Root Rot', authors: 'Liu & Ramirez', year: 2024, tags: ['Soil Science','Root Rot'], abstract: 'Metagenomics analysis of 400 soil samples correlating beneficial microbial diversity indices with natural suppression of Fusarium oxysporum in soybean fields.', saved: false },
+  { id: 6, title: 'Deep Learning for Automated Leaf Disease Detection', authors: 'Patel & Chen', year: 2024, tags: ['AI Analysis','Wheat'], abstract: 'Convolutional neural network architecture trained on 50,000+ annotated crop images achieving 97.3% accuracy across 38 disease classes.', saved: false },
+];
+
+async function loadPapers() {
+  const grid = document.getElementById('papers-grid');
+  try {
+    const { data } = await sb.from('research_papers').select('*').limit(20);
+    allPapers = (data && data.length) ? [...data, ...SAMPLE_PAPERS] : SAMPLE_PAPERS;
+  } catch (e) {
+    allPapers = SAMPLE_PAPERS;
+  }
+  renderPapers(allPapers);
+}
+
+function filterPapers(searchVal) {
+  const search = (searchVal || document.getElementById('paper-search')?.value || '').toLowerCase();
+  const crop = document.getElementById('paper-crop-filter')?.value || '';
+  const disease = document.getElementById('paper-disease-filter')?.value || '';
+  const filtered = allPapers.filter(p => {
+    const matchSearch = !search || p.title.toLowerCase().includes(search) || (p.abstract||'').toLowerCase().includes(search) || (p.authors||'').toLowerCase().includes(search);
+    const matchCrop = !crop || (p.tags||[]).some(t => t.toLowerCase().includes(crop.toLowerCase())) || (p.title||'').toLowerCase().includes(crop.toLowerCase());
+    const matchDisease = !disease || (p.tags||[]).some(t => t.toLowerCase().includes(disease.toLowerCase())) || (p.title||'').toLowerCase().includes(disease.toLowerCase());
+    return matchSearch && matchCrop && matchDisease;
+  });
+  renderPapers(filtered);
+}
+
+function renderPapers(papers) {
+  const grid = document.getElementById('papers-grid');
+  if (!papers.length) { grid.innerHTML = '<div class="col-span-2 text-center py-12 text-on-surface-variant">No papers found matching your filters.</div>'; return; }
+  const tagColors = ['bg-secondary-fixed text-on-secondary-fixed-variant','bg-tertiary-fixed text-on-tertiary-fixed-variant','bg-primary-fixed text-on-primary-fixed-variant'];
+  grid.innerHTML = papers.map((p, i) => `
+    <div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0px_20px_40px_rgba(27,67,50,0.06)] flex flex-col justify-between border border-transparent hover:border-outline-variant/20">
+      <div>
+        <div class="flex justify-between items-start mb-4">
+          <div class="flex flex-wrap gap-2">
+            ${(p.tags||[]).slice(0,2).map((t,ti) => `<span class="${tagColors[ti%tagColors.length]} text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-tighter">${t}</span>`).join('')}
+          </div>
+          <button onclick="toggleBookmark(${p.id})" class="${p.saved ? 'text-secondary' : 'text-outline hover:text-secondary'} transition-colors">
+            <span class="material-symbols-outlined" style="${p.saved ? "font-variation-settings:'FILL' 1" : ''}">bookmark</span>
+          </button>
+        </div>
+        <h3 class="text-xl font-bold text-primary mb-3 leading-tight group-hover:text-secondary transition-colors">${p.title}</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed line-clamp-3 mb-6">${p.abstract || ''}</p>
+      </div>
+      <div class="pt-4 border-t border-surface-container flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-[10px] font-bold text-secondary">${(p.authors||'?').charAt(0)}</div>
+          <span class="font-bold text-primary">${p.authors || 'Unknown'}</span>
+        </div>
+        <span class="text-outline font-medium">${p.year || 2024}</span>
+      </div>
+    </div>`).join('');
+}
+
+function toggleBookmark(paperId) {
+  allPapers = allPapers.map(p => p.id === paperId ? { ...p, saved: !p.saved } : p);
+  filterPapers();
+  showToast(allPapers.find(p=>p.id===paperId)?.saved ? 'Paper saved!' : 'Bookmark removed');
+}
+
+// ===================== PROFILE =====================
+async function loadProfile() {
+  if (!currentUser) { navigateTo('login'); return; }
+  const name = currentUser?.user_metadata?.full_name || currentUser?.profile?.full_name || 'Agronomist';
+  const role = currentUser?.user_metadata?.role || selectedRole || 'Researcher';
+  document.getElementById('profile-name').textContent = name;
+  document.getElementById('profile-role').textContent = role;
+  // Load stats
+  try {
+    const [{ count: diagCount }, { count: postCount }] = await Promise.all([
+      sb.from('diagnoses').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+      sb.from('forum_posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
+    ]);
+    document.getElementById('stat-diagnoses').textContent = diagCount || 0;
+    document.getElementById('stat-posts').textContent = postCount || 0;
+    document.getElementById('stat-saved').textContent = allPapers.filter(p=>p.saved).length;
+  } catch (e) {}
+}
+
+// ===================== UTILITIES =====================
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+// ===================== INIT =====================
+async function init() {
+  // Check existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadUserProfile();
+    navigateTo('dashboard');
+  } else {
+    navigateTo('onboarding');
+  }
+  // Auth state listener
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
