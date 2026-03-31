@@ -764,13 +764,13 @@ async function handleSignup() {
 }
 
 async function handleLogout() {
-  await sb.auth.signOut();
+  if (sb) await sb.auth.signOut();
   currentUser = null; chatHistory = [];
   navigateTo('onboarding');
 }
 
 async function loadUserProfile() {
-  if (!currentUser) return;
+  if (!currentUser || !sb) return;
   try {
     const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     if (data) currentUser.profile = data;
@@ -792,7 +792,7 @@ function initDashboard() {
 
 async function loadDashboardActivity() {
   const feed = document.getElementById('activity-feed');
-  if (!currentUser) {
+  if (!currentUser || !sb) {
     feed.innerHTML = renderSampleActivity();
     return;
   }
@@ -936,14 +936,27 @@ Format your response with clear sections. Use **bold** for disease names. Includ
 
 If the symptoms are unclear, ask targeted questions. Always mention the affected plant parts, pathogen type (fungal/bacterial/viral), and spread risk.`;
 
+  // Use vision model if imageData is present
+  const modelToUse = imageData ? 'grok-2-vision-1212' : 'grok-2-1212';
+  
+  let userContent;
+  if (imageData) {
+    userContent = [
+      { type: "text", text: userMessage },
+      { type: "image_url", image_url: { url: imageData.startsWith('data:') ? imageData : `data:image/jpeg;base64,${imageData}` } }
+    ];
+  } else {
+    userContent = userMessage;
+  }
+
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...chatHistory.slice(-8).filter(m => m.role === 'user' || m.role === 'assistant').slice(0, -1),
-    { role: 'user', content: userMessage }
+    ...chatHistory.slice(-6).map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: userContent }
   ];
 
   const body = {
-    model: 'grok-3-latest',
+    model: modelToUse,
     messages,
     max_tokens: 1024,
     temperature: 0.3
@@ -979,7 +992,7 @@ function parseDiagnosisFromResponse(response, query) {
 }
 
 async function saveDiagnosisToDb(diagData) {
-  if (!currentUser) return;
+  if (!currentUser || !sb || currentUser.id === 'demo-user') return;
   try {
     await sb.from('diagnoses').insert({
       user_id: currentUser.id,
@@ -1203,8 +1216,12 @@ async function loadForumPosts() {
   const container = document.getElementById('forum-posts');
   container.innerHTML = '<div class="text-center py-6 text-on-surface-variant text-sm">Loading posts...</div>';
   try {
-    const { data } = await sb.from('forum_posts').select('*').order('created_at', { ascending: false }).limit(20);
-    forumPosts = (data && data.length) ? [...data, ...SAMPLE_POSTS] : SAMPLE_POSTS;
+    if (sb) {
+      const { data } = await sb.from('forum_posts').select('*').order('created_at', { ascending: false }).limit(20);
+      forumPosts = (data && data.length) ? [...data, ...SAMPLE_POSTS] : SAMPLE_POSTS;
+    } else {
+      forumPosts = SAMPLE_POSTS;
+    }
   } catch (e) {
     forumPosts = SAMPLE_POSTS;
   }
@@ -1256,7 +1273,9 @@ function renderForumPosts() {
 async function upvotePost(postId) {
   forumPosts = forumPosts.map(p => p.id === postId ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p);
   renderForumPosts();
-  try { await sb.from('forum_posts').update({ upvotes: forumPosts.find(p=>p.id===postId)?.upvotes }).eq('id', postId); } catch(e){}
+  try { 
+    if (sb) await sb.from('forum_posts').update({ upvotes: forumPosts.find(p=>p.id===postId)?.upvotes }).eq('id', postId); 
+  } catch(e){}
 }
 
 function openNewPostModal() {
@@ -1282,9 +1301,13 @@ async function submitForumPost() {
     created_at: new Date().toISOString()
   };
   try {
-    const { data, error } = await sb.from('forum_posts').insert(newPost).select().single();
-    if (error) throw error;
-    forumPosts.unshift(data || { ...newPost, id: Date.now() });
+    if (sb) {
+      const { data, error } = await sb.from('forum_posts').insert(newPost).select().single();
+      if (error) throw error;
+      forumPosts.unshift(data || { ...newPost, id: Date.now() });
+    } else {
+      forumPosts.unshift({ ...newPost, id: Date.now() });
+    }
   } catch (e) {
     forumPosts.unshift({ ...newPost, id: Date.now() });
   }
@@ -1309,8 +1332,12 @@ const SAMPLE_PAPERS = [
 async function loadPapers() {
   const grid = document.getElementById('papers-grid');
   try {
-    const { data } = await sb.from('research_papers').select('*').limit(20);
-    allPapers = (data && data.length) ? [...data, ...SAMPLE_PAPERS] : SAMPLE_PAPERS;
+    if (sb) {
+      const { data } = await sb.from('research_papers').select('*').limit(20);
+      allPapers = (data && data.length) ? [...data, ...SAMPLE_PAPERS] : SAMPLE_PAPERS;
+    } else {
+      allPapers = SAMPLE_PAPERS;
+    }
   } catch (e) {
     allPapers = SAMPLE_PAPERS;
   }
@@ -1373,12 +1400,17 @@ async function loadProfile() {
   document.getElementById('profile-role').textContent = role;
   // Load stats
   try {
-    const [{ count: diagCount }, { count: postCount }] = await Promise.all([
-      sb.from('diagnoses').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
-      sb.from('forum_posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
-    ]);
-    document.getElementById('stat-diagnoses').textContent = diagCount || 0;
-    document.getElementById('stat-posts').textContent = postCount || 0;
+    if (sb && currentUser.id !== 'demo-user') {
+      const [{ count: diagCount }, { count: postCount }] = await Promise.all([
+        sb.from('diagnoses').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+        sb.from('forum_posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
+      ]);
+      document.getElementById('stat-diagnoses').textContent = diagCount || 0;
+      document.getElementById('stat-posts').textContent = postCount || 0;
+    } else {
+      document.getElementById('stat-diagnoses').textContent = 14;
+      document.getElementById('stat-posts').textContent = 3;
+    }
     document.getElementById('stat-saved').textContent = allPapers.filter(p=>p.saved).length;
   } catch (e) {}
 }
