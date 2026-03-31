@@ -582,14 +582,26 @@ tailwind.config = {
 
 <script>
 // ===================== CONFIG =====================
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const GROK_API_KEY = 'YOUR_GROK_API_KEY';
+const SUPABASE_URL = 'PLACEHOLDER_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'PLACEHOLDER_SUPABASE_ANON_KEY';
+const GROK_API_KEY = 'PLACEHOLDER_GROK_API_KEY';
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 
 // ===================== SUPABASE INIT =====================
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb;
+try {
+  // Try to initialize; if placeholders are present, it might fail or return invalid client
+  if (SUPABASE_URL && !SUPABASE_URL.includes('PLACEHOLDER')) {
+    const { createClient } = supabase;
+    sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("AgriSense AI: Supabase initialized successfully.");
+  } else {
+    console.warn("AgriSense AI: Using demo mode (placeholders detected).");
+    // Fallback for local preview if needed
+  }
+} catch (e) {
+  console.error("AgriSense AI: Failed to initialize Supabase client.", e);
+}
 
 // ===================== STATE =====================
 let currentScreen = 'onboarding';
@@ -660,39 +672,58 @@ function showAuthSuccess(msg) {
 }
 
 async function handleLogin() {
+  if (!sb) return showAuthError('Supabase client not initialized. Check your configuration.');
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) return showAuthError('Please enter email and password.');
   clearAuthMessages();
   const btn = document.getElementById('login-btn');
-  btn.disabled = true; document.getElementById('login-btn-text').textContent = 'Signing in...';
+  btn.disabled = true; 
+  const btnText = document.getElementById('login-btn-text');
+  if (btnText) btnText.textContent = 'Signing in...';
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (!data.user) throw new Error('No user data returned.');
     currentUser = data.user;
     await loadUserProfile();
     navigateTo('dashboard');
   } catch (e) {
     showAuthError(e.message || 'Login failed. Please try again.');
   } finally {
-    btn.disabled = false; document.getElementById('login-btn-text').textContent = 'Sign In';
+    btn.disabled = false; 
+    if (btnText) btnText.textContent = 'Sign In';
   }
 }
 
 async function handleDemoLogin() {
+  if (!sb) {
+    showAuthError('Demo mode: Supabase not connected. Previewing UI...');
+    // Fake login for preview
+    currentUser = { id: 'demo-user', user_metadata: { full_name: 'Dr. Aris Thorne', role: 'Researcher' } };
+    setTimeout(() => navigateTo('dashboard'), 500);
+    return;
+  }
   // Use a demo account
   document.getElementById('login-email').value = 'demo@agrisense.ai';
   document.getElementById('login-password').value = 'demo123456';
-  // Try to sign in; if fails, sign up first
   clearAuthMessages();
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   try {
     let { data, error } = await sb.auth.signInWithPassword({ email: 'demo@agrisense.ai', password: 'demo123456' });
     if (error) {
-      // Create demo account
-      const res = await sb.auth.signUp({ email: 'demo@agrisense.ai', password: 'demo123456', options: { data: { full_name: 'Dr. Aris Thorne', role: 'Researcher' } } });
+      // Try to create demo account if it doesn't exist
+      const res = await sb.auth.signUp({ 
+        email: 'demo@agrisense.ai', 
+        password: 'demo123456', 
+        options: { data: { full_name: 'Dr. Aris Thorne', role: 'Researcher' } } 
+      });
       if (res.error) throw res.error;
+      if (res.data.user && !res.data.session) {
+        showAuthSuccess('Demo account created! Please verify email or disable email confirmation in Supabase.');
+        return;
+      }
       currentUser = res.data.user;
     } else {
       currentUser = data.user;

@@ -1,0 +1,9 @@
+{
+  "name": "agrisense-ai-lab",
+  "version": "1.0.0",
+  "description": "AI-Powered Crop Diagnostics Platform",
+  "scripts": {
+    "build": "sed -i \"s|PLACEHOLDER_SUPABASE_URL|$SUPABASE_URL|g\" index.html && sed -i \"s|PLACEHOLDER_SUPABASE_ANON_KEY|$SUPABASE_ANON_KEY|g\" index.html && sed -i \"s|PLACEHOLDER_GROK_API_KEY|$GROK_API_KEY|g\" index.html",
+    "start": "serve ."
+  }
+}
