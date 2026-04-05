@@ -1,0 +1,56 @@
+{
+  "diseases": {
+    "Tomato___Early_blight": {
+      "cause": "Fungus Alternaria solani thrives in warm, humid conditions, spreads via spores on debris.",
+      "solution": "1. Remove and burn infected leaves. 2. Apply fungicide (Mancozeb or Chlorothalonil) weekly. 3. Improve air circulation. 4. Use disease-free seeds. 5. Mulch soil."
+    },
+    "Tomato___Late_blight": {
+      "cause": "Phytophthora infestans fungus, cool moist weather favors spread.",
+      "solution": "1. Apply copper-based fungicide immediately. 2. Water at base, avoid leaves. 3. Space plants for airflow. 4. Destroy infected plants. 5. Choose resistant varieties."
+    },
+    "Tomato___Bacterial_spot": {
+      "cause": "Xanthomonas bacteria, via rain splash from soil or seeds.",
+      "solution": "1. Use copper bactericide. 2. Avoid overhead watering. 3. Rotate crops 2-3 years. 4. Remove volunteers. 5. Hot water treat seeds."
+    },
+    "Potato___Early_blight": {
+      "cause": "Alternaria solani, survives on infected debris.",
+      "solution": "1. Fungicide sprays (Dithane). 2. Hill soil around plants. 3. Remove lower leaves. 4. Crop rotation. 5. Certified seed tubers."
+    },
+    "Potato___Late_blight": {
+      "cause": "Phytophthora infestans, wet foliage key factor.",
+      "solution": "1. Preventive fungicide (Ridomil). 2. No irrigation during humid periods. 3. Destroy cull piles. 4. Resistant varieties like Kufri Jyoti."
+    },
+    "Apple___Apple_scab": {
+      "cause": "Venturia inaequalis fungus, wet springs.",
+      "solution": "1. Fungicide during bud swell (Captan). 2. Rake leaves in fall. 3. Prune for airflow. 4. Resistant varieties."
+    },
+    "Apple___Black_rot": {
+      "cause": "Botryosphaeria obtusa, wounds entry.",
+      "solution": "1. Prune cankers. 2. Fungicide. 3. Avoid mower injury."
+    },
+    "Corn_(maize)___Common_rust": {
+      "cause": "Puccinia sorghi, wind-blown urediniospores.",
+      "solution": "1. Resistant hybrids. 2. Fungicide if severe. 3. Crop rotation."
+    },
+    "Pepper,_bell___Bacterial_spot": {
+      "cause": "Xanthomonas, splash dispersal.",
+      "solution": "1. Copper sprays. 2. Fixed copper weekly. 3. Plastic mulch."
+    },
+    "Grape___Black_rot": {
+      "cause": "Guignardia bidwellii, rain splashes spores.",
+      "solution": "1. Fungicide (Mancozeb). 2. Remove mummies. 3. Open canopy."
+    }
+  },
+  "crops": {
+    "Tomato": {
+      "ideal_soil_ph": "6.0-7.0",
+      "water_needs": "Regular, avoid waterlogging",
+      "common_issues": "Blights in monsoon"
+    },
+    "Potato": {
+      "ideal_soil_ph": "5.0-6.5",
+      "water_needs": "Consistent moisture",
+      "common_issues": "Late blight in hills"
+    }
+  }
+}

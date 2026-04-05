@@ -1,0 +1,7 @@
+{
+  "name": "AgriSense AI",
+  "description": "Digital Agronomist Assistant for Smart Farming using Explainable AI.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
