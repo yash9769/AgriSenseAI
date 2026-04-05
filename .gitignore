@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 __pycache__/
 *.pyc
 *.pyo
@@ -10,3 +11,6 @@ dist/
 *.log
 *.tar
 *.pth
+=======
+.vercel
+>>>>>>> 9196f2feed1b7ab6927214fdc7eb9207d2b6e4bb
