@@ -1,9 +1,0 @@
-{
-  "name": "agrisense-ai-lab",
-  "version": "1.0.0",
-  "description": "AI-Powered Crop Diagnostics Platform",
-  "scripts": {
-    "build": "node build.js",
-    "start": "serve ."
-  }
-}
