@@ -1,11 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Leaf, AlertTriangle, CheckCircle, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
-// ─── Supabase client ─────────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Prediction { label: string; score: number }
