@@ -1,93 +1,206 @@
-import React from 'react';
-import { PottedPlant, Mail, Lock, Visibility, Encrypted } from '../components/Icons';
+import React, { useState } from 'react';
+import { PottedPlant, Mail, Lock, Visibility, VisibilityOff, Encrypted } from '../components/Icons';
 import { motion } from 'motion/react';
 
 export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mode === 'forgot') {
+      if (!email) { showToast('⚠️ Please enter your email'); return; }
+      console.log('Login: Sending reset link to', email);
+      showToast('✅ Reset link sent! Check your inbox.');
+      setTimeout(() => setMode('login'), 1500);
+      return;
+    }
+    if (mode === 'signup') {
+      if (!email || !password) { showToast('⚠️ All fields are required'); return; }
+      setLoading(true);
+      console.log('Login: Signing up', email);
+      setTimeout(() => {
+        setLoading(false);
+        showToast('✅ Account created! Signing you in...');
+        setTimeout(() => onLogin(), 1000);
+      }, 1500);
+      return;
+    }
+    // login
+    if (!email || !password) { showToast('⚠️ Please enter email and password'); return; }
+    setLoading(true);
+    console.log('Login: Standard sign in', email);
+    setTimeout(() => {
+      setLoading(false);
+      onLogin();
+    }, 1000);
+  };
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Image with Overlay */}
+    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-emerald-950">
       <div 
-        className="absolute inset-0 bg-cover bg-center grayscale-[20%] brightness-75" 
+        className="absolute inset-0 bg-cover bg-center grayscale-[20%] brightness-75 opacity-40 shadow-inner" 
         style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1920)' }}
       />
-      <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[2px]" />
-      <div className="absolute inset-0 bg-gradient-to-tr from-primary/60 to-transparent" />
+      
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-white/95 backdrop-blur shadow-2xl px-8 py-4 rounded-2xl border border-emerald-100 flex items-center gap-3 animate-in fade-in zoom-in duration-300">
+          <span className="font-headline font-bold text-emerald-900">{toast}</span>
+        </div>
+      )}
       
       <motion.main 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         className="relative z-10 w-full max-w-[480px]"
       >
-        <div className="glass-panel rounded-3xl p-8 md:p-12 shadow-2xl">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container mb-6 shadow-lg">
-              <PottedPlant className="text-white w-8 h-8" />
+        <div className="glass-panel rounded-[2.5rem] p-10 md:p-14 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/20">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl signature-gradient mb-8 shadow-2xl rotate-3 transform hover:rotate-0 transition-all duration-700">
+              <PottedPlant className="text-white w-10 h-10" fill />
             </div>
-            <h1 className="text-3xl font-headline font-extrabold tracking-tight text-primary mb-2">Welcome to AgriSense AI</h1>
-            <p className="text-on-surface-variant font-medium leading-relaxed">Explainable AI for Smart Farming</p>
+            <h1 className="text-4xl font-headline font-black tracking-tight text-white mb-3">
+              {mode === 'forgot' ? 'Reset Portal' : mode === 'signup' ? 'New Harvest' : 'AgriSense AI'}
+            </h1>
+            <p className="text-emerald-100 font-medium opacity-80 decoration-emerald-400 decoration-wavy">
+              {mode === 'forgot' ? "Enter your email to recover your crops" : 'Professional Plant Pathology & Insights'}
+            </p>
           </div>
 
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold tracking-wider text-on-surface-variant uppercase ml-1">Email Address</label>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <label className="block text-[11px] font-black tracking-[0.2em] text-emerald-200 uppercase ml-1 opacity-70">Territory Email</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="text-outline w-5 h-5" />
+                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                  <Mail className="text-emerald-300/60 w-5 h-5 group-focus-within:text-emerald-100 transition-colors" />
                 </div>
                 <input 
                   type="email" 
-                  placeholder="farmer@agrisense.ai"
-                  className="w-full pl-12 pr-4 py-4 bg-surface-container-low border-none rounded-xl text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                  placeholder="farmer@domain.ai"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full pl-14 pr-5 py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-emerald-100/30 focus:ring-2 focus:ring-emerald-400/30 focus:bg-white/10 transition-all outline-none text-lg font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold tracking-wider text-on-surface-variant uppercase ml-1">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="text-outline w-5 h-5" />
+            {mode !== 'forgot' && (
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black tracking-[0.2em] text-emerald-200 uppercase ml-1 opacity-70">Secure Password</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                    <Lock className="text-emerald-300/60 w-5 h-5 group-focus-within:text-emerald-100 transition-colors" />
+                  </div>
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full pl-14 pr-14 py-5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-emerald-100/30 focus:ring-2 focus:ring-emerald-400/30 focus:bg-white/10 transition-all outline-none text-lg font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                        console.log('Login: Toggling password visibility');
+                        setShowPassword(p => !p);
+                    }}
+                    className="absolute inset-y-0 right-0 pr-5 flex items-center text-emerald-300/60 hover:text-white transition-colors"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <VisibilityOff className="w-5 h-5" /> : <Visibility className="w-5 h-5" />}
+                  </button>
                 </div>
-                <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-4 bg-surface-container-low border-none rounded-xl text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                />
-                <button type="button" className="absolute inset-y-0 right-0 pr-4 flex items-center text-outline hover:text-primary transition-colors">
-                  <Visibility className="w-5 h-5" />
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <div className="flex items-center justify-between px-1">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative w-5 h-5">
+                    <input type="checkbox" className="peer absolute inset-0 opacity-0 cursor-pointer z-10" />
+                    <div className="w-full h-full border-2 border-white/20 rounded bg-white/5 peer-checked:bg-emerald-400 peer-checked:border-emerald-400 transition-all" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 text-emerald-950 font-bold text-[10px]">✓</div>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-100/70 group-hover:text-white transition-colors">Keep Session</span>
+                </label>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                      console.log('Login: Switching to Forgot Password mode');
+                      setMode('forgot');
+                  }} 
+                  className="text-sm font-black text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider active:opacity-70"
+                >
+                  Forgot Key?
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between px-1">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input type="checkbox" className="w-5 h-5 border-2 border-outline-variant rounded bg-transparent checked:bg-primary checked:border-primary transition-all" />
-                <span className="text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">Remember me</span>
-              </label>
-              <button type="button" className="text-sm font-semibold text-primary hover:underline underline-offset-4">Forgot password?</button>
-            </div>
+            )}
 
             <button 
               type="submit"
-              className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-[0.98] mt-4"
+              disabled={loading}
+              className="w-full py-5 signature-gradient text-white rounded-2xl font-black text-xl shadow-[0_20px_40px_-12px_rgba(16,185,129,0.3)] hover:shadow-[0_20px_40px_-8px_rgba(16,185,129,0.5)] active:scale-[0.98] mt-6 disabled:opacity-60 transition-all group overflow-hidden relative"
             >
-              Sign In to AgriSense AI
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                {loading ? (
+                    <span className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+                ) : (
+                    <>
+                        {mode === 'forgot' ? 'Initiate Reset' : mode === 'signup' ? 'Claim My Spot' : 'Enter Application'}
+                    </>
+                )}
+              </span>
             </button>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-outline-variant/10 text-center">
-            <p className="text-on-surface-variant font-medium">
-              Don't have an account yet? 
-              <button className="text-primary font-bold ml-1 hover:underline underline-offset-4">Create an account</button>
-            </p>
+          <div className="mt-12 pt-10 border-t border-white/10 text-center">
+            {mode === 'login' ? (
+              <p className="text-emerald-100/60 font-bold">
+                New to the field?{' '}
+                <button 
+                  type="button"
+                  onClick={() => {
+                      console.log('Login: Switching to Signup mode');
+                      setMode('signup');
+                  }} 
+                  className="text-emerald-400 font-black ml-2 hover:text-emerald-300 transition-colors border-b-2 border-emerald-400/20 hover:border-emerald-400/50 pb-0.5 active:opacity-70"
+                >
+                    Create Account
+                </button>
+              </p>
+            ) : (
+              <p className="text-emerald-100/60 font-bold">
+                Returning expert?{' '}
+                <button 
+                   onClick={() => {
+                       console.log('Login: Switching back to Login mode');
+                       setMode('login');
+                   }} 
+                   className="text-emerald-400 font-black ml-2 hover:text-emerald-300 transition-colors border-b-2 border-emerald-400/20 hover:border-emerald-400/50 pb-0.5"
+                >
+                   Sign In
+                </button>
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-2 text-white/60">
+        <div className="mt-10 flex items-center justify-center gap-2 text-white/30">
           <Encrypted className="w-4 h-4" />
-          <span className="text-xs font-semibold tracking-widest uppercase">Secure Enterprise Access</span>
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase">AES-256 Cloud Infrastructure</span>
         </div>
       </motion.main>
     </div>
   );
 };
+
