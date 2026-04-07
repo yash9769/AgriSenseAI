@@ -5,6 +5,9 @@ import { AssistantScreen } from './screens/AssistantScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
+import { WeatherScreen } from './screens/WeatherScreen';
+import { SoilMetricsScreen } from './screens/SoilMetricsScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { Home, History, Add, Analytics, Settings } from './components/Icons';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -18,13 +21,18 @@ export default function App() {
     setScreen('assistant');
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setScreen('login');
+  };
+
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar activeScreen={screen} setScreen={setScreen} />
+      <Sidebar activeScreen={screen} setScreen={setScreen} onLogout={handleLogout} />
       
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Subtle Background Elements */}
@@ -40,10 +48,13 @@ export default function App() {
             transition={{ duration: 0.2 }}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
-            {screen === 'assistant' && <AssistantScreen setScreen={setScreen} />}
-            {screen === 'history' && <HistoryScreen setScreen={setScreen} />}
-            {screen === 'crop-health' && <UploadScreen setScreen={setScreen} />}
-            {screen === 'analysis' && <AnalysisScreen setScreen={setScreen} />}
+            {screen === 'assistant'    && <AssistantScreen setScreen={setScreen} />}
+            {screen === 'history'      && <HistoryScreen setScreen={setScreen} />}
+            {screen === 'crop-health'  && <UploadScreen setScreen={setScreen} />}
+            {screen === 'analysis'     && <AnalysisScreen setScreen={setScreen} />}
+            {screen === 'weather'      && <WeatherScreen setScreen={setScreen} />}
+            {screen === 'soil-metrics' && <SoilMetricsScreen setScreen={setScreen} />}
+            {screen === 'settings'     && <SettingsScreen setScreen={setScreen} onLogout={handleLogout} />}
           </motion.div>
         </AnimatePresence>
 
@@ -78,7 +89,10 @@ export default function App() {
             <Analytics className="w-6 h-6" fill={screen === 'analysis'} />
             <span className="text-[10px] font-bold uppercase tracking-tighter">Data</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-emerald-700/60">
+          <button
+            onClick={() => setScreen('settings')}
+            className={cn("flex flex-col items-center gap-1", screen === 'settings' ? "text-emerald-950" : "text-emerald-700/60")}
+          >
             <Settings className="w-6 h-6" />
             <span className="text-[10px] font-bold uppercase tracking-tighter">Profile</span>
           </button>
