@@ -131,7 +131,14 @@ export const AnalysisScreen = ({ setScreen }: { setScreen: (s: Screen) => void }
           <div className="flex items-end justify-between mb-8">
             <h3 className="text-2xl font-headline font-extrabold tracking-tight">Prescription Strategy</h3>
             <div className="hidden sm:block h-[1px] flex-1 mx-8 bg-outline-variant/20"></div>
-            <button className="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date().toLocaleString();
+                window.alert(`📄 Preparing PDF report for Early Blight diagnosis...\n\nGenerated at: ${now}\n\nIn production this will download a full report with treatment plan, probability distribution, and field metadata.`);
+              }}
+              className="text-primary text-sm font-bold flex items-center gap-1 hover:underline active:scale-95 transition-transform"
+            >
               Download PDF Report
               <Download className="w-4 h-4" />
             </button>
