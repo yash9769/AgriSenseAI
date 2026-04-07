@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { Sidebar, type Screen } from './components/Sidebar';
 import { LoginScreen } from './screens/LoginScreen';
 import { AssistantScreen } from './screens/AssistantScreen';
@@ -13,18 +14,35 @@ import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('login');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [screen, setScreen] = useState<Screen>('assistant');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      if (!session) setScreen('login');
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      if (!session) setScreen('login');
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
     setScreen('assistant');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
     setScreen('login');
   };
+
+  if (isLoggedIn === null) return null;
 
   if (!isLoggedIn) {
     return <LoginScreen onLogin={handleLogin} />;
