@@ -1,21 +1,22 @@
 import React from 'react';
-import { SmartToy, History, PottedPlant, Science, WbSunny, Help, Settings, Add } from './Icons';
+import { SmartToy, History, PottedPlant, Science, WbSunny, Help, Settings, Add, LogOut } from './Icons';
 import { cn } from '../lib/utils';
 
-export type Screen = 'login' | 'assistant' | 'history' | 'crop-health' | 'analysis';
+export type Screen = 'login' | 'assistant' | 'history' | 'crop-health' | 'analysis' | 'soil-metrics' | 'weather' | 'settings';
 
 interface SidebarProps {
   activeScreen: Screen;
   setScreen: (s: Screen) => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
+export const Sidebar = ({ activeScreen, setScreen, onLogout }: SidebarProps) => {
   const navItems = [
-    { id: 'assistant', label: 'Assistant', icon: SmartToy },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'crop-health', label: 'Crop Health', icon: PottedPlant },
+    { id: 'assistant',    label: 'Assistant',    icon: SmartToy },
+    { id: 'history',      label: 'History',      icon: History },
+    { id: 'crop-health',  label: 'Crop Health',  icon: PottedPlant },
     { id: 'soil-metrics', label: 'Soil Metrics', icon: Science },
-    { id: 'weather', label: 'Weather', icon: WbSunny },
+    { id: 'weather',      label: 'Weather',      icon: WbSunny },
   ];
 
   return (
@@ -31,7 +32,11 @@ export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
       </div>
 
       <button 
-        onClick={() => setScreen('crop-health')}
+        type="button"
+        onClick={() => {
+          console.log('Navigating to Crop Health');
+          setScreen('crop-health');
+        }}
         className="mb-6 w-full flex items-center justify-center gap-2 py-3 signature-gradient text-white rounded-xl shadow-sm text-sm font-bold hover:opacity-90 transition-all active:scale-95"
       >
         <Add className="w-4 h-4" />
@@ -42,7 +47,11 @@ export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => setScreen(item.id as Screen)}
+            type="button"
+            onClick={() => {
+              console.log(`Navigating to ${item.id}`);
+              setScreen(item.id as Screen);
+            }}
             className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-headline text-sm font-medium",
               activeScreen === item.id 
@@ -57,15 +66,42 @@ export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
       </nav>
 
       <div className="mt-auto flex flex-col gap-1 border-t border-emerald-900/5 pt-4">
-        <button className="flex items-center gap-3 px-4 py-3 text-emerald-800 hover:bg-emerald-100 rounded-xl transition-all font-headline text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => setScreen('settings')}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-medium outline-none",
+            activeScreen === 'settings' ? "bg-emerald-800 text-white shadow-sm" : "text-emerald-800 hover:bg-emerald-100 font-medium"
+          )}
+        >
           <Help className="w-5 h-5" />
-          <span>Support</span>
+          <span>Support & Help</span>
         </button>
-        <button className="flex items-center gap-3 px-4 py-3 text-emerald-800 hover:bg-emerald-100 rounded-xl transition-all font-headline text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => setScreen('settings')}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-medium outline-none",
+            activeScreen === 'settings' ? "bg-emerald-900 text-white shadow-sm" : "text-emerald-800 hover:bg-emerald-100 font-medium"
+          )}
+        >
           <Settings className="w-5 h-5" />
           <span>Settings</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm('Sign out of AgriSense AI?')) {
+              onLogout?.();
+            }
+          }}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-medium text-red-700 hover:bg-red-50"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sign Out</span>
         </button>
       </div>
     </aside>
   );
 };
+
