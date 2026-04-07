@@ -2,8 +2,6 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Leaf, AlertTriangle, CheckCircle, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Prediction { label: string; score: number }
 interface DiagnosisResult {
@@ -67,15 +65,13 @@ export default function DiagnosisUploader() {
       const form = new FormData();
       form.append('image', file);
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/diagnose`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const { data, error: invokeError } = await supabase.functions.invoke('diagnose', {
         body: form,
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error ?? 'Diagnosis failed');
-      setResult({ ...json.diagnosis, source: json.source });
+      if (invokeError) throw invokeError;
+      if (!data.success) throw new Error(data.error ?? 'Diagnosis failed');
+      setResult({ ...data.diagnosis, source: data.source });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
