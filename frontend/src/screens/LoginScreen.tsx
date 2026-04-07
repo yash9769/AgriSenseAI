@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PottedPlant, Mail, Lock, Visibility, VisibilityOff, Encrypted } from '../components/Icons';
+import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 
 export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
@@ -15,34 +16,40 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'forgot') {
-      if (!email) { showToast('⚠️ Please enter your email'); return; }
-      console.log('Login: Sending reset link to', email);
-      showToast('✅ Reset link sent! Check your inbox.');
-      setTimeout(() => setMode('login'), 1500);
-      return;
-    }
-    if (mode === 'signup') {
-      if (!email || !password) { showToast('⚠️ All fields are required'); return; }
-      setLoading(true);
-      console.log('Login: Signing up', email);
-      setTimeout(() => {
-        setLoading(false);
-        showToast('✅ Account created! Signing you in...');
-        setTimeout(() => onLogin(), 1000);
-      }, 1500);
-      return;
-    }
-    // login
-    if (!email || !password) { showToast('⚠️ Please enter email and password'); return; }
     setLoading(true);
-    console.log('Login: Standard sign in', email);
-    setTimeout(() => {
-      setLoading(false);
+    setToast(null);
+
+    try {
+      if (mode === 'forgot') {
+        if (!email) { showToast('⚠️ Please enter your email'); return; }
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        showToast('✅ Reset link sent! Check your inbox.');
+        setTimeout(() => setMode('login'), 2000);
+        return;
+      }
+
+      if (mode === 'signup') {
+        if (!email || !password) { showToast('⚠️ All fields are required'); return; }
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        showToast('✅ Account created! Check your email for verification.');
+        return;
+      }
+
+      // login
+      if (!email || !password) { showToast('⚠️ Please enter email and password'); return; }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      
       onLogin();
-    }, 1000);
+    } catch (err) {
+      showToast(err instanceof Error ? `❌ ${err.message}` : '❌ Authentication failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
