@@ -15,6 +15,7 @@ interface DiagnosisResult {
   prevention?: string | null;
   all_predictions?: Prediction[];
   source: 'model' | 'llm';
+  inferenceMode?: string;
 }
 
 // ─── Severity badge config ────────────────────────────────────────────────────
@@ -62,16 +63,55 @@ export default function DiagnosisUploader() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('You must be logged in to run a diagnosis.');
 
-      const form = new FormData();
-      form.append('image', file);
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-      const { data, error: invokeError } = await supabase.functions.invoke('diagnose', {
-        body: form,
+      // Encode image as base64 JSON — eliminates all binary/stream/ArrayBuffer transfer issues
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Strip the data URL prefix (e.g. "data:image/jpeg;base64,")
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
       });
 
-      if (invokeError) throw invokeError;
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/diagnose`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64,
+          contentType: file.type || 'image/jpeg',
+          fileName: file.name,
+        }),
+      });
+
+      const responseText = await response.text();
+      console.log(`🔵 Edge Function HTTP ${response.status}:`, responseText);
+
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`Server returned non-JSON response (${response.status}): ${responseText.slice(0, 200)}`);
+      }
+
+      if (!response.ok) {
+        console.error('🔴 Server error diagnostics:', data.diagnostics);
+        throw new Error(data.error ?? `Server error ${response.status}`);
+      }
+
+      console.log('✅ DiagnosisUploader response:', data);
+      console.log('📊 Debug:', data._debug);
+
       if (!data.success) throw new Error(data.error ?? 'Diagnosis failed');
-      setResult({ ...data.diagnosis, source: data.source });
+      setResult({ ...data.diagnosis, source: data.source, inferenceMode: data.inferenceMode });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
@@ -187,10 +227,15 @@ export default function DiagnosisUploader() {
             <div className="p-6 space-y-5">
               {/* Source badge */}
               <div className="flex items-center justify-between">
-                {result.source === 'model' ? (
+                {result.inferenceMode === 'huggingface' ? (
                   <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-xs font-semibold">
                     <CheckCircle className="w-3.5 h-3.5" />
                     HF Model · {((result.confidence ?? 0) * 100).toFixed(1)}% confidence
+                  </span>
+                ) : result.inferenceMode === 'demo' ? (
+                  <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-xs font-semibold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Demo Mode · Example Result
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full text-xs font-semibold">
