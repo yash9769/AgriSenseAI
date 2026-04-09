@@ -17,6 +17,12 @@ interface AnalysisScreenProps {
     reasoning: string[];
     treatment: string[];
     prevention: string[];
+    // --- Soft Computing/PGM Fields ---
+    fuzzy?: { label: string; description: string; level: string; color: string };
+    uncertainty?: { flag: boolean; message: string; tier: string };
+    top3?: { label: string; score: number; pct: string }[];
+    symptomGraph?: { symptom: string; weight: number }[];
+    inferenceMode?: string;
   } | null;
 }
 
@@ -58,7 +64,7 @@ export const AnalysisScreen = ({ setScreen, image, result }: AnalysisScreenProps
                 <span className="px-3 py-1 glass-panel rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-white/20">Analysis Target</span>
               </div>
               <h1 className="text-3xl font-headline font-extrabold text-white leading-tight">{result.crop}</h1>
-              <p className="text-emerald-50/80 text-sm max-w-md">Gemini 1.5 Pro identified the following health patterns in your crop.</p>
+              <p className="text-emerald-50/80 text-sm max-w-md">AgriSense Hybrid AI identified the following health patterns in your crop.</p>
             </div>
           </div>
 
@@ -120,29 +126,112 @@ export const AnalysisScreen = ({ setScreen, image, result }: AnalysisScreenProps
             <div className="space-y-6">
                 <div className="p-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/5">
                     <p className="text-sm text-on-surface-variant leading-relaxed">
-                        The detected <strong>{result.disease}</strong> is currently at a <strong>{result.risk_level}</strong> risk level. {result.reasoning[0]}
+                        The detected <strong>{result.disease}</strong> is currently at a <strong>{result.risk_level}</strong> risk level. {result.reasoning[0] || 'Strategic response suggested.'}
                     </p>
                 </div>
+                {result.fuzzy && (
+                  <div className={cn(
+                    "p-4 rounded-2xl border flex flex-col gap-1",
+                    result.fuzzy.level === 'high' ? "bg-emerald-50 border-emerald-100" :
+                    result.fuzzy.level === 'medium' ? "bg-amber-50 border-amber-100" : "bg-red-50 border-red-100"
+                  )}>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">
+                      <span>Fuzzy Logic Label</span>
+                      <Psychology className="w-3 h-3" />
+                    </div>
+                    <p className="font-bold text-sm">{result.fuzzy.label} CONFIDENCE</p>
+                    <p className="text-xs opacity-80">{result.fuzzy.description}</p>
+                  </div>
+                )}
             </div>
           </div>
 
           <div className="bg-surface-container-low p-8 rounded-3xl md:col-span-2">
             <h3 className="text-lg font-headline font-bold mb-6 flex items-center gap-2 text-primary">
               <Psychology className="w-5 h-5" />
-              Visual Evidence & Reasoning
+              Advanced Reasoning Engine
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {result.reasoning.map((reason, i) => (
-                <div key={i} className="bg-surface-container-lowest p-4 rounded-2xl flex flex-col items-start gap-2 shadow-sm">
-                  <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center">
-                    <GridView className="text-primary w-4 h-4" />
-                  </div>
-                  <p className="text-xs leading-relaxed">{reason}</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 h-full">
+              {/* Top-3 Probabilistic Reasoning */}
+              <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-emerald-900/5 flex flex-col">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Probabilistic Top-3 (PGM)</span>
+                <div className="space-y-4 flex-1 justify-center flex flex-col">
+                  {(result.top3 || []).map((p, i) => (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="truncate">{p.label}</span>
+                        <span>{p.pct}</span>
+                      </div>
+                      <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: p.pct }}
+                          className="h-full bg-primary"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {(!result.top3 || result.top3.length === 0) && (
+                    <p className="text-xs italic text-on-surface-variant">Model diagnostics stabilizing...</p>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Symptom Graph */}
+              <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-emerald-900/5 flex flex-col">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Symptom-Disease Graph Edges</span>
+                <div className="space-y-3">
+                  {(result.symptomGraph || []).slice(0, 4).map((edge, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2 bg-surface-container-low rounded-lg">
+                      <div className="w-2 h-2 rounded-full bg-primary/40 shrink-0"></div>
+                      <span className="text-xs font-medium capitalize flex-1">{edge.symptom}</span>
+                      <span className="text-[10px] font-bold text-primary/60">w={edge.weight.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {(!result.symptomGraph || result.symptomGraph.length === 0) && (
+                    <p className="text-xs italic text-on-surface-variant">Mapping visual symptoms to Bayesian node graph...</p>
+                  )}
+                </div>
+              </div>
+
+              {/* LLM Reasoning (if available) */}
+              {result.reasoning && result.reasoning.length > 0 && (
+                <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-emerald-900/5 flex flex-col col-span-1 sm:col-span-2">
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Model Reasoning (Gemini Hybrid Tier)</span>
+                  <div className="space-y-2">
+                    {result.reasoning.map((r, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                        <p className="text-xs text-on-surface-variant leading-relaxed">{r}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
+
+        {/* Uncertainty & Fallback Logic (Visible if uncertainty is high) */}
+        {result.uncertainty?.flag && (
+           <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-4 items-center"
+           >
+              <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
+                <Bolt className="w-5 h-5 text-amber-800" />
+              </div>
+              <div>
+                <h4 className="font-bold text-amber-900 text-sm">Uncertainty Warning</h4>
+                <p className="text-xs text-amber-800 leading-relaxed">{result.uncertainty.message}</p>
+              </div>
+              <div className="ml-auto">
+                 <span className="text-[9px] font-black bg-amber-900 text-white px-2 py-0.5 rounded-full uppercase italic">Soft Computing Tier: {result.uncertainty.tier}</span>
+              </div>
+           </motion.div>
+        )}
 
         {/* Prescription Strategy */}
         <section>

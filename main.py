@@ -61,16 +61,6 @@ api_router = APIRouter(prefix="/api")
 
 # --- MASTER ENDPOINTS ---
 
-@api_router.get("/weather/current")
-async def get_weather_current(city: str = "Mumbai"):
-    try:
-        data = weather_service.get_weather(city=city)
-        if "error" in data:
-            return {"temperature": 25, "windspeed": 10, "condition_code": 1, "city": city}
-        return data
-    except:
-        return {"temperature": 25, "windspeed": 10, "condition_code": 1, "city": city}
-
 @api_router.post("/chat")
 @api_router.post("/chat/")
 async def chat_handler(request: ChatRequest):

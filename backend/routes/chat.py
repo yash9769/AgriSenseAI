@@ -15,11 +15,7 @@ class ChatRequest(BaseModel):
 async def chat(request: ChatRequest):
     try:
         result = await process_chat(request.message, request.user_id, request.image_base64)
-        # Harmonize with frontend expectations: 'response' for text, 'data' for metrics
-        return {
-            "response": result.get("explanation"),
-            "data": result
-        }
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

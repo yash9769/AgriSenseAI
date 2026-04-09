@@ -3,6 +3,7 @@ import { CloudUpload, AddAPhoto, Close, Analytics, Lightbulb, History } from '..
 import { TopBar } from '../components/TopBar';
 import { type Screen } from '../components/Sidebar';
 import { motion } from 'motion/react';
+import { supabase } from '../lib/supabase';
 
 interface UploadScreenProps {
   setScreen: (s: Screen) => void;
@@ -41,21 +42,40 @@ export const UploadScreen = ({ setScreen, setSelectedImg, setAnalysisResult }: U
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const resp = await fetch('/api/disease/detect', {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/disease/detect', {
         method: 'POST',
         body: formData,
       });
 
-      if (!resp.ok) {
-        throw new Error(`Server error: ${resp.statusText}`);
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || "Diagnosis failed");
       }
 
-      const data = await resp.json();
-      setAnalysisResult(data);
+      const data = await response.json();
+      const diag = data.diagnosis || {};
+
+      // Structure response perfectly for AnalysisScreen with Soft Computing data
+      setAnalysisResult({
+        disease: diag.disease || 'Unknown Issue',
+        crop: diag.crop || 'Plant',
+        confidence: diag.confidence ? Math.round(diag.confidence * 100) : 0,
+        pathogen: diag.pathogen || 'AI Diagnosis',
+        risk_level: diag.risk_level || 'Medium',
+        reasoning: diag.reasoning || data.reasoning || [],
+        treatment: Array.isArray(diag.treatment) ? diag.treatment : [diag.treatment || 'Consult agronomist'],
+        prevention: Array.isArray(diag.prevention) ? diag.prevention : [diag.prevention || 'Maintain cleanliness'],
+        // New Soft Computing fields
+        fuzzy: data.fuzzy,
+        uncertainty: data.uncertainty,
+        top3: data.top3,
+        symptomGraph: data.symptomGraph,
+        inferenceMode: data.inferenceMode
+      });
       setScreen('analysis');
     } catch (err: any) {
       setError(err.message || "Failed to analyze image");

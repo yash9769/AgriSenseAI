@@ -26,13 +26,13 @@ class WeatherService:
             return None, None, None
 
     def get_weather(self, latitude: float = None, longitude: float = None, city: str = None):
+        target_city = city or "Mumbai"
         try:
-            target_city = city or "Mumbai"
             if latitude is None or longitude is None:
                 lat, lon, city_name = self.get_coordinates(target_city)
                 if lat is None:
                     # Final safety fallback to Mumbai coordinates
-                    lat, lon, target_city = 19.0760, 72.8777, "Mumbai"
+                    latitude, longitude, target_city = 19.0760, 72.8777, "Mumbai"
                 else:
                     latitude, longitude, target_city = lat, lon, city_name
 
@@ -50,13 +50,27 @@ class WeatherService:
             
             current = weather_response.get("current", {})
             return {
-                "temperature": current.get("temperature_2m"),
-                "windspeed": current.get("wind_speed_10m"),
-                "humidity": current.get("relative_humidity_2m"),
-                "condition_code": current.get("weather_code"),
+                "temperature": current.get("temperature_2m", 25),
+                "windspeed": current.get("wind_speed_10m", 10),
+                "humidity": current.get("relative_humidity_2m", 60),
+                "condition_code": current.get("weather_code", 1),
                 "city": target_city,
-                "weather": weather_response # Full object for frontend charts/forecasts
+                "weather": weather_response,
+                "success": True
             }
         except Exception as e:
             logger.error(f"Weather fetch error: {e}")
-            return {"error": str(e), "temperature": 0, "city": city}
+            # Robust fallback to avoid 500
+            return {
+                "success": False,
+                "error": str(e),
+                "temperature": 25,
+                "windspeed": 10,
+                "humidity": 60,
+                "condition_code": 1,
+                "city": target_city,
+                "weather": {
+                    "current": {"temperature_2m": 25, "relative_humidity_2m": 60, "wind_speed_10m": 10, "weather_code": 1},
+                    "daily": {"time": [], "temperature_2m_max": [], "weather_code": []}
+                }
+            }

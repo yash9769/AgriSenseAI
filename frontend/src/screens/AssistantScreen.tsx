@@ -17,6 +17,7 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
   const [isIrrigating, setIsIrrigating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showNotification, setShowNotification] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
@@ -30,7 +31,10 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
       const resp = await fetch('/api/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputText }),
+        body: JSON.stringify({ 
+          message: inputText,
+          image_base64: selectedImage 
+        }),
       });
 
       if (!resp.ok) throw new Error("Connection failed");
@@ -42,6 +46,7 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         data: data.data || null
       }]);
+      setSelectedImage(null); // Clear image after send
     } catch (err: any) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -50,6 +55,17 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -97,33 +113,56 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
                 "p-5 rounded-2xl shadow-sm bg-surface-container-lowest leading-relaxed",
                 m.role === 'assistant' ? "rounded-tl-none border border-emerald-900/5" : "bg-primary text-on-primary rounded-tr-none"
               )}>
-                 {m.text}
-                 {m.data && (
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {m.data.temp && (
-                      <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
-                          <WbSunny className="w-6 h-6" />
+                  {m.text}
+                  {m.data && (
+                    <div className="mt-4 space-y-4">
+                      {/* Telemetry Data (if any) */}
+                      {(m.data.temp || m.data.humidity) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {m.data.temp && (
+                            <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-lg bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+                                <WbSunny className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-tight opacity-60">Temperature</p>
+                                <p className="text-xl font-headline font-extrabold">{m.data.temp}°C</p>
+                              </div>
+                            </div>
+                          )}
+                          {m.data.humidity && (
+                            <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center text-on-error-container">
+                                <WaterDrop className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-tight opacity-60">Humidity</p>
+                                <p className="text-xl font-headline font-extrabold">{m.data.humidity}%</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-tight opacity-60">Temperature</p>
-                          <p className="text-xl font-headline font-extrabold">{m.data.temp}°C</p>
+                      )}
+
+                      {/* Groq Structured Diagnosis */}
+                      {m.data.Problem && m.data.Problem !== 'None' && (
+                        <div className="bg-surface-container-low p-5 rounded-2xl border border-emerald-900/5 space-y-3">
+                          <div className="flex items-center gap-2 text-emerald-900">
+                             <Science className="w-5 h-5 font-bold" />
+                             <span className="text-xs font-black uppercase tracking-widest">Diagnostic Report</span>
+                          </div>
+                          <div className="space-y-2">
+                             <p className="text-sm"><strong className="text-primary">Problem:</strong> {m.data.Problem}</p>
+                             <p className="text-sm"><strong className="text-primary">Cause:</strong> {m.data.Cause}</p>
+                             <div className="p-3 bg-emerald-900/5 rounded-xl border border-emerald-900/5">
+                                <p className="text-sm font-bold text-emerald-900 mb-1">Recommended Solution:</p>
+                                <p className="text-sm">{m.data.Solution}</p>
+                             </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {m.data.humidity && (
-                      <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center text-on-error-container">
-                          <WaterDrop className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-tight opacity-60">Humidity</p>
-                          <p className="text-xl font-headline font-extrabold">{m.data.humidity}%</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
               </div>
               <span className="text-[10px] text-on-surface-variant/60 uppercase tracking-widest font-semibold">{m.time}</span>
             </div>
@@ -179,11 +218,37 @@ export const AssistantScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
 
           <div className="relative group">
             <div className="absolute inset-0 bg-emerald-900/5 rounded-2xl blur-lg transition-opacity opacity-0 group-focus-within:opacity-100"></div>
+            
+            {selectedImage && (
+              <div className="relative mb-2 inline-block">
+                <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-primary shadow-md" alt="Preview" />
+                <button 
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute -top-2 -right-2 bg-error text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
             <div className="relative flex items-center bg-surface-container-lowest border border-emerald-900/10 p-2 pl-4 rounded-2xl shadow-sm">
-              <button className="p-2 text-on-surface-variant hover:text-emerald-900 transition-colors">
+              <button 
+                className="p-2 text-on-surface-variant hover:text-emerald-900 transition-colors"
+                onClick={() => document.getElementById('chat-file-input')?.click()}
+              >
                 <AddCircle className="w-6 h-6" />
               </button>
-              <button className="p-2 text-on-surface-variant hover:text-emerald-900 transition-colors mr-2">
+              <input 
+                id="chat-file-input"
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleImageSelect}
+              />
+              <button 
+                className="p-2 text-on-surface-variant hover:text-emerald-900 transition-colors mr-2"
+                onClick={() => document.getElementById('chat-file-input')?.click()}
+              >
                 <ImageIcon className="w-6 h-6" />
               </button>
               <input 

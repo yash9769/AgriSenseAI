@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { TopBar } from '../components/TopBar';
 import { type Screen } from '../components/Sidebar';
 import { WaterDrop, WbSunny, Science, Analytics, ChevronRight } from '../components/Icons';
@@ -12,12 +13,10 @@ export const DashboardScreen = ({ setScreen }: { setScreen: (s: Screen) => void 
   useEffect(() => {
     const fetchWeather = async (lat?: number, lon?: number) => {
       try {
-        const url = lat && lon 
-          ? `/api/weather/current?latitude=${lat}&longitude=${lon}`
-          : '/api/weather/current?city=Mumbai';
-          
-        const res = await fetch(url);
-        const data = await res.json();
+        const query = lat && lon ? `?latitude=${lat}&longitude=${lon}` : '?city=Mumbai';
+        const resp = await fetch(`/api/weather/current${query}`);
+        if (!resp.ok) throw new Error("Weather fetch failed");
+        const data = await resp.json();
         setWeather(data);
       } catch (err) {
         console.error("Weather sync failed", err);
