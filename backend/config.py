@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./crop_advisory.db"
     gemini_api_key: str = ""
     openweather_api_key: str = ""
+    groq_api_key: str = ""
+    together_api_key: str = ""
     sendgrid_api_key: str = ""
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
@@ -15,6 +17,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 @lru_cache()
 def get_settings():

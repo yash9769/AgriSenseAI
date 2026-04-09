@@ -1,8 +1,8 @@
 import React from 'react';
-import { SmartToy, History, PottedPlant, Science, WbSunny, Help, Settings, Add } from './Icons';
+import { SmartToy, History, PottedPlant, Science, WbSunny, Help, Settings, Add, Groups, Forum, Dashboard, Map, Analytics, Diamond } from './Icons';
 import { cn } from '../lib/utils';
 
-export type Screen = 'login' | 'assistant' | 'history' | 'crop-health' | 'analysis';
+export type Screen = 'login' | 'assistant' | 'history' | 'crop-health' | 'analysis' | 'forums' | 'community' | 'soil-metrics' | 'weather' | 'settings' | 'support' | 'dashboard' | 'field-map' | 'analytics' | 'pro-plan';
 
 interface SidebarProps {
   activeScreen: Screen;
@@ -11,11 +11,14 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
   const navItems = [
-    { id: 'assistant', label: 'Assistant', icon: SmartToy },
-    { id: 'history', label: 'History', icon: History },
+    { id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+    { id: 'assistant', label: 'AI Assistant', icon: SmartToy },
+    { id: 'field-map', label: 'Field Map', icon: Map },
     { id: 'crop-health', label: 'Crop Health', icon: PottedPlant },
-    { id: 'soil-metrics', label: 'Soil Metrics', icon: Science },
-    { id: 'weather', label: 'Weather', icon: WbSunny },
+    { id: 'analytics', label: 'Analytics', icon: Analytics },
+    { id: 'history', label: 'Analysis History', icon: History },
+    { id: 'community', label: 'Community', icon: Groups },
+    { id: 'forums', label: 'Forums', icon: Forum },
   ];
 
   return (
@@ -57,12 +60,41 @@ export const Sidebar = ({ activeScreen, setScreen }: SidebarProps) => {
       </nav>
 
       <div className="mt-auto flex flex-col gap-1 border-t border-emerald-900/5 pt-4">
-        <button className="flex items-center gap-3 px-4 py-3 text-emerald-800 hover:bg-emerald-100 rounded-xl transition-all font-headline text-sm font-medium">
-          <Help className="w-5 h-5" />
+        <div className="mb-2 p-4 rounded-2xl bg-gradient-to-br from-emerald-900 to-emerald-950 text-white shadow-lg relative overflow-hidden group/pro">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Diamond className="w-4 h-4 text-emerald-400" fill />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Pro Plan</span>
+            </div>
+            <p className="text-[11px] text-emerald-100/70 leading-snug mb-3">Get advanced satellite insights and 24/7 expert support.</p>
+            <button 
+              onClick={() => setScreen('pro-plan')}
+              className="w-full py-2 bg-white text-emerald-900 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-50 transition-colors"
+            >
+              Upgrade Now
+            </button>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-400/10 rounded-full blur-2xl group-hover/pro:scale-150 transition-transform duration-700"></div>
+        </div>
+
+        <button 
+          onClick={() => setScreen('support')}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-medium",
+            activeScreen === 'support' ? "bg-emerald-900 text-white shadow-sm" : "text-emerald-800 hover:bg-emerald-100"
+          )}
+        >
+          <Help className="w-5 h-5" fill={activeScreen === 'support'} />
           <span>Support</span>
         </button>
-        <button className="flex items-center gap-3 px-4 py-3 text-emerald-800 hover:bg-emerald-100 rounded-xl transition-all font-headline text-sm font-medium">
-          <Settings className="w-5 h-5" />
+        <button 
+          onClick={() => setScreen('settings')}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-medium",
+            activeScreen === 'settings' ? "bg-emerald-900 text-white shadow-sm" : "text-emerald-800 hover:bg-emerald-100"
+          )}
+        >
+          <Settings className="w-5 h-5" fill={activeScreen === 'settings'} />
           <span>Settings</span>
         </button>
       </div>

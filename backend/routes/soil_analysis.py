@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from backend.database import get_db
 from backend.models.soil_analysis_history import SoilAnalysisHistory
-from backend.services.gemini_service import explain_soil
+from services.gemini_service import explain_soil
 
 router = APIRouter(prefix="/api/soil", tags=["soil"])
 
@@ -50,3 +50,8 @@ async def analyze_soil(data: SoilInput, db: Session = Depends(get_db)):
     db.commit()
     advisory = explain_soil(data.dict(), score, recs)
     return {"health_score": score, "recommendations": recs, "advisory": advisory}
+
+@router.get("/history/{user_id}")
+async def get_soil_history(user_id: int, db: Session = Depends(get_db)):
+    history = db.query(SoilAnalysisHistory).filter(SoilAnalysisHistory.user_id == user_id).order_by(SoilAnalysisHistory.timestamp.desc()).all()
+    return history

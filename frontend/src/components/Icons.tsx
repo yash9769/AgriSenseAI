@@ -343,3 +343,72 @@ export const ImageIcon = ({ className }: { className?: string }) => (
     <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
   </svg>
 );
+export const Forum = ({ className, fill }: { className?: string, fill?: boolean }) => (
+  <svg className={className} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    <path d="M8 9h8" />
+    <path d="M8 13h6" />
+  </svg>
+);
+
+export const Groups = ({ className, fill }: { className?: string, fill?: boolean }) => (
+  <svg className={className} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+export const Map = ({ className, fill }: { className?: string, fill?: boolean }) => (
+  <svg className={className} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a2 2 0 0 1-1.106 1.789l-3.659 1.83a2 2 0 0 1-1.788 0l-4.894-2.447a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 17.493V4.729a2 2 0 0 1 1.106-1.789l3.659-1.83a2 2 0 0 1 1.788 0l4.894 2.447a2 2 0 0 0 1.788 0z" />
+    <path d="M9 3v15" />
+    <path d="M15 6v15" />
+  </svg>
+);
+
+export const Diamond = ({ className, fill }: { className?: string, fill?: boolean }) => (
+  <svg className={className} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3 5 9l7 12 7-12-7-6Z" />
+    <path d="M2.7 9h18.6" />
+    <path d="M7 3l5 6 5-6" />
+    <path d="M5 9l7 12 7-12" />
+  </svg>
+);
+
+export const Dashboard = ({ className, fill }: { className?: string, fill?: boolean }) => (
+  <svg className={className} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="7" height="9" x="3" y="3" rx="1" />
+    <rect width="7" height="5" x="14" y="3" rx="1" />
+    <rect width="7" height="9" x="14" y="12" rx="1" />
+    <rect width="7" height="5" x="3" y="16" rx="1" />
+  </svg>
+);
+
+export const TrendingUp = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+
+export const TrendingDown = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+    <polyline points="17 18 23 18 23 12" />
+  </svg>
+);
+
+export const Timeline = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 5v14c0 1.1.9 2 2 2h14" />
+    <path d="M7 15l4-4 4 4 5-5" />
+  </svg>
+);
+
+export const ShowChart = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 3v18h18" />
+    <path d="M19 9l-5 5-4-4-3 3" />
+  </svg>
+);

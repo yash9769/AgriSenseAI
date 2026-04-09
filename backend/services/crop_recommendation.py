@@ -2,7 +2,7 @@ import json, os
 from backend.services.weather_service import fetch_weather
 from backend.services.market_price_service import get_market_prices
 from backend.services.climate_alert import get_climate_alerts
-from backend.services.gemini_service import generate_crop_advisory
+from services.gemini_service import generate_crop_advisory
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), "../data/crops.json")
 
