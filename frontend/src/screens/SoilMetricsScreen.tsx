@@ -1,109 +1,172 @@
-import React from 'react';
-import { Science, WaterDrop, Thermostat } from '../components/Icons';
+import React, { useState, useEffect } from 'react';
 import { TopBar } from '../components/TopBar';
 import { type Screen } from '../components/Sidebar';
+import { Science, WaterDrop, Bolt, Analytics, CheckCircle, Warning, Psychology, ChevronRight, History } from '../components/Icons';
 import { motion } from 'motion/react';
-
-const SOIL_DATA = [
-  { sector: 'Sector A-12', crop: 'Tomato', moisture: 68, ph: 6.4, nitrogen: 82, temp: 22, status: 'Optimal' },
-  { sector: 'Sector B-04', crop: 'Wheat', moisture: 45, ph: 7.1, nitrogen: 61, temp: 24, status: 'Moderate' },
-  { sector: 'Sector B-05', crop: 'Potato', moisture: 72, ph: 5.9, nitrogen: 88, temp: 21, status: 'Optimal' },
-  { sector: 'Sector C-01', crop: 'Corn', moisture: 34, ph: 6.8, nitrogen: 47, temp: 26, status: 'Low' },
-];
-
-const statusColor: Record<string, string> = {
-  Optimal: 'bg-emerald-100 text-emerald-800',
-  Moderate: 'bg-yellow-100 text-yellow-800',
-  Low: 'bg-red-100 text-red-800',
-};
+import { cn } from '../lib/utils';
 
 export const SoilMetricsScreen = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
+  const [formData, setFormData] = useState({
+    nitrogen: 45,
+    phosphorus: 25,
+    potassium: 30,
+    ph: 6.5,
+    organic_matter: 2.5
+  });
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchHistory = async () => {
+    try {
+      const resp = await fetch('/api/soil/history/1'); // Mock user_id 1
+      const data = await resp.json();
+      setHistory(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch('/api/soil/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, user_id: 1 })
+      });
+      const result = await resp.json();
+      setAnalysisResult(result);
+      fetchHistory();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <TopBar title="Soil Metrics" setScreen={setScreen} />
+      <TopBar title="Soil Diagnostics" activeScreen="soil-metrics" setScreen={setScreen} />
+      
       <div className="flex-1 overflow-y-auto p-8 max-w-7xl mx-auto w-full space-y-8 scrollbar-hide">
-        <div className="mb-6">
-          <span className="text-xs font-bold text-on-tertiary-container uppercase tracking-[0.2em] mb-2 block">Live Sensors</span>
-          <h2 className="font-headline text-5xl font-extrabold text-primary tracking-tight mb-2">Soil Metrics</h2>
-          <p className="text-on-surface-variant">Real-time sensor readings across all field sectors</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-surface-container-low p-8 rounded-[2.5rem] border border-emerald-900/5 shadow-sm">
+                <h3 className="text-2xl font-headline font-bold text-primary mb-8 flex items-center gap-3">
+                    <Science className="w-6 h-6" />
+                    Input Soil Data
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                    {Object.entries(formData).map(([key, val]) => (
+                        <div key={key} className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant flex justify-between">
+                                {key.replace('_', ' ')}
+                                <span className="text-primary">{val}</span>
+                            </label>
+                            <input 
+                                type="range"
+                                min={key === 'ph' ? 0 : 0}
+                                max={key === 'ph' ? 14 : 200}
+                                step={key === 'ph' || key === 'organic_matter' ? 0.1 : 1}
+                                value={val}
+                                onChange={(e) => setFormData({...formData, [key]: parseFloat(e.target.value)})}
+                                className="w-full accent-primary h-2 bg-surface-container-highest rounded-full transition-all"
+                            />
+                        </div>
+                    ))}
+                </div>
+                <button 
+                  onClick={handleAnalyze}
+                  disabled={loading}
+                  className={cn(
+                    "w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2",
+                    loading ? "opacity-50" : "hover:shadow-xl active:scale-95"
+                  )}
+                >
+                  {loading ? "Analyzing Micro-nutrients..." : "Perform AI Analysis"}
+                  <Bolt className={cn("w-4 h-4", loading && "animate-spin")} />
+                </button>
+            </div>
+
+            {analysisResult ? (
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-emerald-950 p-8 rounded-[2.5rem] text-white flex flex-col shadow-2xl relative overflow-hidden"
+                >
+                    <div className="relative z-10 flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Psychology className="w-8 h-8 text-emerald-400" />
+                            <h3 className="text-2xl font-headline font-black uppercase tracking-tighter">AI Advisory Scan</h3>
+                        </div>
+                        <div className="flex items-center gap-6 mb-8">
+                            <div className="text-6xl font-headline font-black text-emerald-400">{analysisResult.health_score}%</div>
+                            <div className="text-xs font-bold uppercase tracking-widest text-white/60">Health Index Score</div>
+                        </div>
+                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 space-y-4 mb-8">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">Recommendations</h4>
+                            <ul className="space-y-2">
+                                {analysisResult.recommendations.map((rec: string, i: number) => (
+                                    <li key={i} className="flex items-start gap-2 text-sm text-white/80">
+                                        <div className="w-4 h-4 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                                        </div>
+                                        {rec}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <p className="text-sm font-medium text-emerald-100/60 leading-relaxed italic">{analysisResult.advisory}</p>
+                    </div>
+                </motion.div>
+            ) : (
+                <div className="bg-surface-container-low p-8 rounded-[2.5rem] border-2 border-dashed border-emerald-900/10 flex flex-col items-center justify-center text-center">
+                    <Analytics className="w-16 h-16 text-emerald-900/10 mb-4" />
+                    <p className="text-on-surface-variant/40 font-bold uppercase tracking-widest text-xs">Run analysis to see results</p>
+                </div>
+            )}
         </div>
 
-        {/* Summary cards */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { icon: WaterDrop, label: 'Avg Moisture', value: '54%', delta: '+3%', good: true },
-            { icon: Science, label: 'Avg pH', value: '6.6', delta: 'Neutral', good: true },
-            { icon: Thermostat, label: 'Avg Soil Temp', value: '23°C', delta: '+1°C', good: true },
-            { icon: Science, label: 'Low Nitrogen Alerts', value: '1', delta: 'Sector C-01', good: false },
-          ].map(({ icon: Icon, label, value, delta, good }) => (
-            <div key={label} className="bg-surface-container-lowest border border-emerald-900/5 rounded-2xl p-6">
-              <Icon className="w-5 h-5 text-emerald-800 mb-3" />
-              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{label}</p>
-              <p className="text-3xl font-headline font-black text-primary">{value}</p>
-              <p className={`text-xs font-semibold mt-1 ${good ? 'text-emerald-600' : 'text-red-600'}`}>{delta}</p>
+        <div className="bg-surface-container-lowest p-8 rounded-[2.5rem] border border-emerald-900/5 shadow-sm">
+            <h3 className="text-2xl font-headline font-bold text-primary mb-8 flex items-center gap-3">
+                <History className="w-6 h-6" />
+                Diagnostic History
+            </h3>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b border-emerald-900/5">
+                            <th className="py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Date</th>
+                            <th className="py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">NPK Index</th>
+                            <th className="py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">pH Level</th>
+                            <th className="py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Health Score</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-emerald-900/5">
+                        {history.length > 0 ? history.map((item, i) => (
+                            <tr key={i} className="group hover:bg-surface-container-low transition-colors">
+                                <td className="py-5 text-sm font-medium">{new Date(item.timestamp).toLocaleDateString()}</td>
+                                <td className="py-5 text-sm font-bold text-primary">{Math.round(item.nitrogen)}-{Math.round(item.phosphorus)}-{Math.round(item.potassium)}</td>
+                                <td className="py-5 text-sm font-bold">{item.ph.toFixed(1)}</td>
+                                <td className="py-5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-20 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                            <div className="h-full bg-emerald-400" style={{ width: `${item.soil_health_score}%` }}></div>
+                                        </div>
+                                        <span className="text-xs font-bold">{Math.round(item.soil_health_score)}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan={4} className="py-20 text-center text-sm font-medium text-on-surface-variant/40">No historical records found</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
-          ))}
-        </section>
-
-        {/* Sector table */}
-        <section className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-emerald-900/5 shadow-sm">
-          <div className="px-8 py-6 border-b border-surface-container">
-            <h3 className="font-headline font-bold text-lg text-primary">Sector Readings</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-surface-container-low/50 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                  <th className="px-8 py-4">Sector</th>
-                  <th className="px-6 py-4">Moisture</th>
-                  <th className="px-6 py-4">pH</th>
-                  <th className="px-6 py-4">Nitrogen</th>
-                  <th className="px-6 py-4">Soil Temp</th>
-                  <th className="px-8 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-container">
-                {SOIL_DATA.map((row) => (
-                  <tr key={row.sector} className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="px-8 py-5">
-                      <p className="font-bold text-primary">{row.sector}</p>
-                      <p className="text-xs text-on-surface-variant">{row.crop}</p>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-20 bg-surface-container rounded-full overflow-hidden">
-                          <motion.div className="h-full bg-blue-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${row.moisture}%` }} />
-                        </div>
-                        <span className="text-sm font-bold">{row.moisture}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 font-semibold text-sm">{row.ph}</td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-20 bg-surface-container rounded-full overflow-hidden">
-                          <motion.div className={`h-full rounded-full ${row.nitrogen > 70 ? 'bg-emerald-500' : 'bg-red-400'}`} initial={{ width: 0 }} animate={{ width: `${row.nitrogen}%` }} />
-                        </div>
-                        <span className="text-sm font-bold">{row.nitrogen}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 font-semibold text-sm">{row.temp}°C</td>
-                    <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${statusColor[row.status]}`}>{row.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Recommendation box */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex items-start gap-4">
-          <span className="text-2xl">💡</span>
-          <div>
-            <p className="font-bold text-emerald-800">Fertilization Recommendation</p>
-            <p className="text-sm text-emerald-700 mt-1">Sector C-01 (Corn) shows nitrogen levels below optimal threshold. Apply 40kg/hectare of urea fertilizer within the next 5 days for best results.</p>
-          </div>
         </div>
       </div>
     </div>

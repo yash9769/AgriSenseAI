@@ -1,56 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase';
+import React, { useState } from 'react';
 import { Sidebar, type Screen } from './components/Sidebar';
 import { LoginScreen } from './screens/LoginScreen';
+import { RegisterScreen } from './screens/RegisterScreen';
 import { AssistantScreen } from './screens/AssistantScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { UploadScreen } from './screens/UploadScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
-import { WeatherScreen } from './screens/WeatherScreen';
+import { ForumsScreen } from './screens/ForumsScreen';
+import { CommunityScreen } from './screens/CommunityScreen';
+import { DashboardScreen } from './screens/DashboardScreen';
+import { FieldMapScreen } from './screens/FieldMapScreen';
 import { SoilMetricsScreen } from './screens/SoilMetricsScreen';
+import { WeatherScreen } from './screens/WeatherScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { SupportScreen } from './screens/SupportScreen';
+import { ProPlanScreen } from './screens/ProPlanScreen';
+import { AnalyticsScreen } from './screens/AnalyticsScreen';
 import { Home, History, Add, Analytics, Settings } from './components/Icons';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('assistant');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [screen, setScreen] = useState<Screen>('dashboard');
+  const [user, setUser] = useState<any>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
-      if (!session) setScreen('login');
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
-      if (!session) setScreen('login');
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogin = () => {
+  const handleLogin = (userData: any) => {
+    setUser(userData);
     setIsLoggedIn(true);
-    setScreen('assistant');
+    setScreen('dashboard');
   };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsLoggedIn(false);
-    setScreen('login');
-  };
-
-  if (isLoggedIn === null) return null;
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={handleLogin} />;
+    return authMode === 'login' ? (
+      <LoginScreen onLogin={handleLogin} onSwitchToRegister={() => setAuthMode('register')} />
+    ) : (
+      <RegisterScreen onRegister={handleLogin} onSwitchToLogin={() => setAuthMode('login')} />
+    );
   }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar activeScreen={screen} setScreen={setScreen} onLogout={handleLogout} />
+      <Sidebar activeScreen={screen} setScreen={setScreen} />
       
       <main className="flex-1 flex flex-col relative overflow-hidden">
         {/* Subtle Background Elements */}
@@ -66,13 +60,32 @@ export default function App() {
             transition={{ duration: 0.2 }}
             className="flex-1 flex flex-col h-full overflow-hidden"
           >
-            {screen === 'assistant'    && <AssistantScreen setScreen={setScreen} />}
-            {screen === 'history'      && <HistoryScreen setScreen={setScreen} />}
-            {screen === 'crop-health'  && <UploadScreen setScreen={setScreen} />}
-            {screen === 'analysis'     && <AnalysisScreen setScreen={setScreen} />}
-            {screen === 'weather'      && <WeatherScreen setScreen={setScreen} />}
+            {screen === 'assistant' && <AssistantScreen setScreen={setScreen} />}
+            {screen === 'history' && <HistoryScreen setScreen={setScreen} />}
+            {screen === 'crop-health' && (
+              <UploadScreen 
+                setScreen={setScreen} 
+                setSelectedImg={setSelectedImg} 
+                setAnalysisResult={setAnalysisResult} 
+              />
+            )}
+            {screen === 'analysis' && (
+              <AnalysisScreen 
+                setScreen={setScreen} 
+                image={selectedImg} 
+                result={analysisResult} 
+              />
+            )}
+            {screen === 'forums' && <ForumsScreen setScreen={setScreen} />}
+            {screen === 'community' && <CommunityScreen setScreen={setScreen} />}
+            {screen === 'dashboard' && <DashboardScreen setScreen={setScreen} />}
+            {screen === 'field-map' && <FieldMapScreen setScreen={setScreen} />}
             {screen === 'soil-metrics' && <SoilMetricsScreen setScreen={setScreen} />}
-            {screen === 'settings'     && <SettingsScreen setScreen={setScreen} onLogout={handleLogout} />}
+            {screen === 'weather' && <WeatherScreen setScreen={setScreen} />}
+            {screen === 'settings' && <SettingsScreen setScreen={setScreen} user={user} setUser={setUser} setIsLoggedIn={setIsLoggedIn} />}
+            {screen === 'support' && <SupportScreen setScreen={setScreen} />}
+            {screen === 'pro-plan' && <ProPlanScreen setScreen={setScreen} />}
+            {screen === 'analytics' && <AnalyticsScreen setScreen={setScreen} />}
           </motion.div>
         </AnimatePresence>
 
@@ -107,11 +120,11 @@ export default function App() {
             <Analytics className="w-6 h-6" fill={screen === 'analysis'} />
             <span className="text-[10px] font-bold uppercase tracking-tighter">Data</span>
           </button>
-          <button
+          <button 
             onClick={() => setScreen('settings')}
             className={cn("flex flex-col items-center gap-1", screen === 'settings' ? "text-emerald-950" : "text-emerald-700/60")}
           >
-            <Settings className="w-6 h-6" />
+            <Settings className="w-6 h-6" fill={screen === 'settings'} />
             <span className="text-[10px] font-bold uppercase tracking-tighter">Profile</span>
           </button>
         </nav>

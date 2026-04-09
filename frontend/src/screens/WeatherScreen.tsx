@@ -1,128 +1,161 @@
-import React from 'react';
-import { WbSunny, WaterDrop, Science, Thermostat, CloudUpload, Settings, Help, Bell, User, LogOut } from '../components/Icons';
+import React, { useState, useEffect } from 'react';
 import { TopBar } from '../components/TopBar';
 import { type Screen } from '../components/Sidebar';
+import { WbSunny, Warning } from '../components/Icons';
 
 export const WeatherScreen = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
-  const hourly = [
-    { time: '6 AM', temp: 18, icon: '🌤', rain: 10 },
-    { time: '9 AM', temp: 22, icon: '☀️', rain: 0 },
-    { time: '12 PM', temp: 27, icon: '☀️', rain: 0 },
-    { time: '3 PM', temp: 29, icon: '⛅', rain: 20 },
-    { time: '6 PM', temp: 24, icon: '🌧', rain: 65 },
-    { time: '9 PM', temp: 19, icon: '🌩', rain: 80 },
-  ];
-  const weekly = [
-    { day: 'Mon', high: 29, low: 18, icon: '☀️' },
-    { day: 'Tue', high: 26, low: 17, icon: '⛅' },
-    { day: 'Wed', high: 22, low: 15, icon: '🌧' },
-    { day: 'Thu', high: 24, low: 16, icon: '🌤' },
-    { day: 'Fri', high: 28, low: 19, icon: '☀️' },
-    { day: 'Sat', high: 31, low: 20, icon: '☀️' },
-    { day: 'Sun', high: 27, low: 18, icon: '⛅' },
-  ];
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState('Mumbai');
+
+  useEffect(() => {
+    const getWeatherData = async (lat?: number, lon?: number) => {
+      setLoading(true);
+      try {
+        const url = lat && lon 
+          ? `/api/weather/current?latitude=${lat}&longitude=${lon}`
+          : `/api/weather/current?city=${encodeURIComponent(city)}`;
+          
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("Server error");
+        const data = await resp.json();
+        setWeatherData(data);
+        if (data.city) setCity(data.city);
+      } catch (err) {
+        console.error("Weather fetch failed", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => getWeatherData(pos.coords.latitude, pos.coords.longitude),
+        () => getWeatherData()
+      );
+    } else {
+      getWeatherData();
+    }
+  }, []); // Only run on mount for auto-detect
+
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center bg-surface p-20 text-primary font-headline font-bold uppercase tracking-widest animate-pulse">
+       Synchronizing Satellites...
+    </div>
+  );
+
+  const forecast = weatherData?.weather?.daily?.time?.map((time: string, i: number) => ({
+    day: new Date(time).toLocaleDateString([], { weekday: 'SHORT' }).toUpperCase(),
+    temp: `${Math.round(weatherData?.weather?.daily?.temperature_2m_max?.[i] || 0)}°C`,
+    icon: WbSunny
+  })) || [];
+
+  const current = weatherData?.weather?.current || {};
+
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/weather/current?city=${encodeURIComponent(city)}`);
+      const data = await resp.json();
+      setWeatherData(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <TopBar title="Weather Forecast" setScreen={setScreen} />
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-surface">
+      <TopBar title="Weather & Environment" activeScreen="weather" setScreen={setScreen} />
+      
       <div className="flex-1 overflow-y-auto p-8 max-w-7xl mx-auto w-full space-y-8 scrollbar-hide">
-        <div className="mb-6">
-          <span className="text-xs font-bold text-on-tertiary-container uppercase tracking-[0.2em] mb-2 block">Live Data</span>
-          <h2 className="font-headline text-5xl font-extrabold text-primary tracking-tight mb-2">Weather Forecast</h2>
-          <p className="text-on-surface-variant">Field Station · Latitude 18.52°N · Updated 2 min ago</p>
+        {/* Search Header */}
+        <div className="flex justify-between items-center bg-surface-container-lowest p-4 rounded-3xl border border-emerald-900/5 shadow-sm">
+           <div className="flex items-center gap-4 px-4 flex-1">
+              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Tracking City:</span>
+              <input 
+                type="text" 
+                value={city} 
+                onChange={(e) => setCity(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Enter city..."
+                className="flex-1 bg-transparent border-none focus:ring-0 font-headline font-bold text-primary placeholder:text-outline/20"
+              />
+           </div>
+           <button 
+             onClick={handleSearch}
+             className="px-6 py-2 signature-gradient text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-sm"
+           >
+              Update Node
+           </button>
         </div>
 
-        {/* Current conditions hero */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-primary rounded-3xl p-8 text-white relative overflow-hidden">
-            <div className="absolute inset-0 signature-gradient opacity-60" />
-            <div className="relative z-10 flex justify-between items-start">
+        {/* Dashboard Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Weather */}
+          <div className="lg:col-span-2 signature-gradient p-10 rounded-[3rem] text-white relative overflow-hidden shadow-2xl">
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
               <div>
-                <p className="text-white/70 font-semibold uppercase tracking-widest text-xs mb-2">Current Conditions</p>
-                <div className="flex items-end gap-4 mb-4">
-                  <span className="text-8xl font-headline font-black">27°C</span>
-                  <div className="mb-3">
-                    <p className="text-2xl">⛅</p>
-                    <p className="text-white/80 font-semibold">Partly Cloudy</p>
+                <span className="text-white/60 font-black uppercase tracking-[0.3em] text-[10px]">Current Conditions</span>
+                <div className="flex items-center gap-6 mt-4">
+                  <h2 className="text-7xl md:text-8xl font-headline font-black tracking-tighter">{Math.round(current.temperature_2m || 0)}°</h2>
+                  <div className="space-y-1">
+                    <p className="text-2xl md:text-3xl font-headline font-bold">In {city}</p>
+                    <p className="text-white/70 font-medium">Humidity {current.relative_humidity_2m}% · Wind {current.wind_speed_10m} km/h</p>
                   </div>
                 </div>
-                <p className="text-white/70 text-sm">Feels like 30°C · Sector A-12 Field Station</p>
               </div>
-              <div className="text-right space-y-3">
-                <div>
-                  <p className="text-white/60 text-xs font-bold uppercase">Humidity</p>
-                  <p className="text-2xl font-bold">62%</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-xs font-bold uppercase">Wind</p>
-                  <p className="text-2xl font-bold">14 km/h</p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-xs font-bold uppercase">UV Index</p>
-                  <p className="text-2xl font-bold">6</p>
-                </div>
+              <div className="hidden md:flex w-48 h-48 bg-white/10 backdrop-blur-xl rounded-full items-center justify-center border border-white/20 shadow-inner">
+                <WbSunny className="w-32 h-32 text-white drop-shadow-lg" />
               </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { icon: WaterDrop, label: 'Rainfall', value: '12mm', sub: 'Last 24h', color: 'bg-blue-50 text-blue-800' },
-              { icon: WbSunny, label: 'Sunrise', value: '6:04 AM', sub: 'Sunset 6:42 PM', color: 'bg-yellow-50 text-yellow-800' },
-              { icon: Thermostat, label: 'Soil Temp', value: '22°C', sub: 'Optimal range', color: 'bg-emerald-50 text-emerald-800' },
-              { icon: Science, label: 'Dew Point', value: '18°C', sub: 'Moderate', color: 'bg-purple-50 text-purple-800' },
-            ].map(({ icon: Icon, label, value, sub, color }) => (
-              <div key={label} className={`${color} rounded-2xl p-4 flex flex-col gap-2`}>
-                <Icon className="w-5 h-5" />
-                <p className="text-xs font-bold uppercase tracking-tight">{label}</p>
-                <p className="text-2xl font-headline font-black">{value}</p>
-                <p className="text-xs opacity-70">{sub}</p>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Hourly */}
-        <section className="bg-surface-container-lowest rounded-3xl p-8 border border-emerald-900/5">
-          <h3 className="font-headline font-bold text-lg text-primary mb-6">Hourly Forecast</h3>
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
-            {hourly.map(h => (
-              <div key={h.time} className="flex flex-col items-center gap-2 bg-surface-container-low rounded-2xl p-4">
-                <span className="text-xs font-bold text-on-surface-variant uppercase">{h.time}</span>
-                <span className="text-2xl">{h.icon}</span>
-                <span className="font-headline font-black text-primary">{h.temp}°</span>
-                <span className="text-xs text-blue-600 font-semibold">{h.rain}%</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 7-day */}
-        <section className="bg-surface-container-lowest rounded-3xl p-8 border border-emerald-900/5">
-          <h3 className="font-headline font-bold text-lg text-primary mb-6">7-Day Outlook</h3>
-          <div className="space-y-3">
-            {weekly.map(d => (
-              <div key={d.day} className="flex items-center justify-between py-3 border-b border-surface-container last:border-0">
-                <span className="font-bold text-sm text-on-surface w-12">{d.day}</span>
-                <span className="text-xl">{d.icon}</span>
-                <div className="flex items-center gap-2 flex-1 justify-end">
-                  <div className="h-2 bg-surface-container rounded-full flex-1 max-w-32 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-blue-400 to-orange-400 rounded-full" style={{ width: `${((d.high - d.low) / 20) * 100}%` }} />
-                  </div>
-                  <span className="text-sm text-on-surface-variant w-10 text-right">{d.low}°</span>
-                  <span className="text-sm font-bold text-primary w-10 text-right">{d.high}°</span>
+            <div className="mt-12 flex justify-between gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {forecast.map((item: any, i: number) => (
+                <div key={i} className="flex flex-col items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 min-w-[100px]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{item.day}</span>
+                  <item.icon className="w-8 h-8 text-white" />
+                  <span className="text-xl font-headline font-bold">{item.temp}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </section>
 
-        {/* Farming alert */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 flex items-start gap-4">
-          <span className="text-2xl">⚠️</span>
-          <div>
-            <p className="font-bold text-yellow-800">Irrigation Advisory</p>
-            <p className="text-sm text-yellow-700 mt-1">Rain expected Thursday evening (65% probability). Consider delaying irrigation Tuesday to conserve water. Optimal window: Wednesday morning.</p>
+          {/* Environmental Log */}
+          <div className="bg-surface-container-lowest p-8 rounded-[3rem] border border-emerald-900/5 shadow-sm flex flex-col">
+            <h3 className="text-2xl font-headline font-bold text-primary mb-6">Environmental Log</h3>
+            <div className="space-y-6 flex-1">
+              {[
+                { label: 'Wind Speed', val: current.wind_speed_10m ? `${current.wind_speed_10m} km/h` : '12 km/h', sub: 'North-East' },
+                { label: 'UV Index', val: '6.4 High', sub: 'Sun protection required' },
+                { label: 'Precipitation', val: '0.2 mm', sub: 'Last 24 hours' },
+                { label: 'Dew Point', val: '18°C', sub: 'Stable' },
+              ].map((log, i) => (
+                <div key={i} className="flex justify-between items-end border-b border-outline-variant/10 pb-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-1">{log.label}</p>
+                    <p className="text-sm text-outline font-medium">{log.sub}</p>
+                  </div>
+                  <p className="text-xl font-headline font-black text-primary">{log.val}</p>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
+
+        {/* Rain Warning */}
+        <div className="bg-error-container/30 border border-error/10 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8 shadow-sm">
+          <div className="w-16 h-16 bg-error shadow-lg shadow-error/20 rounded-2xl flex items-center justify-center shrink-0">
+             <Warning className="w-8 h-8 text-white" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h4 className="text-xl font-headline font-bold text-on-error-container">Heavy Rainfall Expected</h4>
+            <p className="text-on-error-container opacity-80 mt-1">Check Field B-12 for potential water logging in the next 24 hours.</p>
+          </div>
+          <button className="bg-error text-white px-8 py-3 rounded-xl font-bold hover:bg-error/90 transition-colors shadow-md">
+            Emergency Guidelines
+          </button>
         </div>
       </div>
     </div>

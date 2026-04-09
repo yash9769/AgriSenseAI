@@ -1,118 +1,99 @@
-# AgriSense AI — Living Laboratory
-### AI-Powered Crop Diagnostics Platform
+# 🌿 AgriSense AI: Explainable AI for Smart Farming
+
+AgriSense AI is an advanced ecological monitoring and crop diagnostic platform. Built with **React 19**, **FastAPI**, and **Google Gemini 1.5 Pro**, it provides farmers with explainable, high-fidelity insights into field health, weather risks, and resource management.
+
+![Version](https://img.shields.io/badge/version-1.0.0-emerald)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Tech](https://img.shields.io/badge/Stack-React%20%7C%20FastAPI%20%7C%20Gemini-emerald)
 
 ---
 
-## 🚀 Quick Start
+## ✨ Key Modules
 
-1. **Open `index.html`** in any modern browser — no build step needed.
-2. **Run the SQL** in `supabase_schema.sql` in your Supabase SQL Editor to set up tables.
-3. **Use Demo Login** on the sign-in screen to instantly access the full app.
+### 🔍 AI Crop Pathology
+*   **Visual Diagnosis**: Detect diseases, nutrient deficiencies, and pests using imagery and Gemini 1.5 Pro.
+*   **Explainable Reasoning**: Detailed breakdowns of visual evidence and pathogen biology.
+*   **Actionable Rx**: Categorized treatment protocols (Immediate Response vs. Long-term Prevention).
+
+### 🌤️ Environmental Command Center
+*   **Real-time Node Tracking**: Live telemetry (Temp, Humidity, Wind) synchronized from global weather nodes.
+*   **Predictive Hazards**: AI-driven alerts for rainfall logging, heat stress, and UV risks.
+
+### 🗺️ Precision Field Mapping
+*   **Digital Twin Layout**: Interactive sector-based visualization of your farmland.
+*   **IoT Overlays**: Sector-specific moisture indexing and yield forecasting.
+
+### 🤝 Agronomy Social Layer
+*   **Farmer Guilds**: Join specialized communities to optimize crop-specific yields.
+*   **Expert Forums**: Global discussion hub for sharing node data and field experiences.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Technology Stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Vanilla HTML/CSS/JS + Tailwind CSS (CDN) |
-| AI Model | Grok API (`grok-3-latest`) via X.AI |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth (email/password) |
-| Fonts | Google Fonts — Manrope + Material Symbols |
+| **Frontend** | React 19, Vite, Tailwind CSS v4, Framer Motion |
+| **Backend** | FastAPI (Python), SQLAlchemy, SQLite |
+| **AI/ML** | Google Gemini 1.5 Pro (Vision & Chat) |
+| **Icons & UI** | Material Symbols & Custom SVG Engine |
 
 ---
 
-## 📱 Screens
+## 🚀 Execution Guide
 
-| Screen | Description |
-|--------|-------------|
-| **Onboarding** | Role selection (Farmer / Researcher / Student) |
-| **Login / Signup** | Supabase auth with demo account option |
-| **Home Dashboard** | Personalized greeting, quick actions, recent diagnoses |
-| **AI Chatbot** | Real-time chat with Grok AI for crop diagnosis |
-| **Diagnosis Result** | Full report with confidence ring, treatment protocol |
-| **Research Forum** | Community posts with upvoting, filtering, post creation |
-| **Research Papers** | Searchable/filterable archive with bookmarking |
-| **Profile** | User stats, settings, logout |
+### Prerequisite Environment
+- Python 3.10+
+- Node.js 20+
+- [Google Gemini API Key](https://aistudio.google.com/app/apikey)
 
----
-
-## 🔑 Credentials
-
+### 1. Initialize Backend
+```bash
+cd backend
+python -m venv venv
+# Windows: venv\Scripts\activate | Linux: source venv/bin/activate
+pip install -r requirements.txt
+python -m backend.app
 ```
-Supabase URL:        YOUR_SUPABASE_URL
-Supabase Anon Key:  YOUR_SUPABASE_ANON_KEY
-Grok API Key:        YOUR_GROK_API_KEY
+*The server will run on `http://localhost:8000` and automatically initialize the SQLite database.*
+
+### 2. Initialize Frontend
+```bash
+cd frontend
+npm install
+# Add GEMINI_API_KEY to your .env file
+npm run dev
 ```
+*The application will be accessible at `http://localhost:3000`.*
 
 ---
 
-## 🌿 Design System — "Living Laboratory"
+## 🔄 The AgriSense Workflow
 
-Based on the **Verdant Logic** design system:
-- **Primary** `#012d1d` — Deep botanical authority
-- **Secondary** `#006c48` — Breath of life
-- **Surface** `#f8faf8` — Organic canvas
-- **No-Line Rule** — Depth through tonal layering, never borders
-- **Font** — Manrope across all scales
-- **Shadows** — Green-tinted `rgba(27,67,50,x)` only
+1.  **Secure Authentication**: Establish an end-to-end encrypted link via the **Military-Grade Login** system.
+2.  **Dashboard Sync**: View real-time telemetry from your field sectors.
+3.  **Visual Audit**: Upload crop photos for 10-second AI diagnostic processing.
+4.  **Field Strategy**: Implement Gemini's "Prescription Strategies" and monitor progress in the History log.
+5.  **Community Loop**: Share critical alerts or successful treatment protocols in your local **Farmer Guild**.
 
 ---
 
-## 🗄️ Database Setup (Supabase)
+## 📁 Project Structure
 
-1. Go to your [Supabase SQL Editor](https://supabase.com/dashboard/project/jochdexnhwisqkklbeua/sql)
-2. Paste the contents of `supabase_schema.sql`
-3. Click **Run**
-
-Tables created:
-- `profiles` — User profiles (auto-created on signup)
-- `diagnoses` — Saved crop diagnoses
-- `forum_posts` — Community forum posts
-- `research_papers` — Research archive
-- `saved_papers` — User bookmarks
-
----
-
-## 💡 Features
-
-### AI Diagnosis
-- Real Grok API integration (`grok-3-latest` model)
-- Agricultural pathologist system prompt
-- Chat history maintained per session
-- Auto-detects disease mentions → shows diagnosis report
-- Saves diagnoses to Supabase
-
-### Forum
-- Real posts stored in Supabase
-- Falls back to curated sample posts
-- Upvoting, tag filtering, role badges
-
-### Research Papers
-- Client-side search + filter (crop type, disease)
-- Bookmarking (local state)
-- Seeded sample papers in DB
-
----
-
-## 📦 File Structure
-
-```
-agrisense_app/
-├── index.html          ← Complete SPA (all screens)
-├── supabase_schema.sql ← Database setup
-└── README.md           ← This file
+```text
+AgriSenseAI/
+├── backend/            # FastAPI Server & AI Services
+│   ├── routes/         # Unified API endpoints
+│   ├── database.py     # SQLAlchemy models & session
+│   └── app.py          # Server entry point
+├── frontend/           # React 19 SPA
+│   ├── src/screens/    # Modular UI components
+│   ├── src/App.tsx     # Main router & Auth layer
+│   └── vite.config.ts  # Dev server & Proxy setup
+└── README.md           # This document
 ```
 
 ---
 
-## ⚙️ Deploying
-
-Since this is a single HTML file, you can deploy it anywhere:
-- **Netlify Drop** — drag the folder to netlify.com/drop
-- **GitHub Pages** — push to a repo, enable Pages
-- **Vercel** — `vercel --prod` in the folder
-- **Any static host** — just upload `index.html`
-
-No build tools, no Node.js, no configuration needed.
+## 🛡️ License
+Distributed under the MIT License. Created with ❤️ for the future of professional agriculture.

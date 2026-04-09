@@ -4,7 +4,7 @@ from typing import Optional
 import base64
 from backend.services.chat_service import process_chat
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 class ChatRequest(BaseModel):
     message: str
@@ -14,8 +14,12 @@ class ChatRequest(BaseModel):
 @router.post("/")
 async def chat(request: ChatRequest):
     try:
-        response = await process_chat(request.message, request.user_id, request.image_base64)
-        return response
+        result = await process_chat(request.message, request.user_id, request.image_base64)
+        # Harmonize with frontend expectations: 'response' for text, 'data' for metrics
+        return {
+            "response": result.get("explanation"),
+            "data": result
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
