@@ -1,9 +1,27 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { Upload, X, Leaf, AlertTriangle, CheckCircle, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+// ─── PGM Evidence constants ────────────────────────────────────────────────────
+const CROP_TYPES = ['Tomato','Wheat','Maize','Grape','Pepper','Potato','Apple','Rice','Cotton','Soybean','Other'];
+const SEASONS = [
+  { value: 'kharif', label: 'Kharif (Monsoon · Jun–Oct)' },
+  { value: 'rabi',   label: 'Rabi (Winter · Nov–Mar)' },
+  { value: 'zaid',   label: 'Zaid (Summer · Apr–May)' },
+];
+// Auto-detect current Indian agricultural season by month
+function detectSeason(): string {
+  const m = new Date().getMonth() + 1; // 1-12
+  if (m >= 6 && m <= 10) return 'kharif';
+  if (m >= 4 && m <= 5)  return 'zaid';
+  return 'rabi';
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
-interface Prediction { label: string; score: number }
+interface Prediction { label: string; score: number; pct?: string }
+interface FuzzyLabel  { label: string; description: string; level: string; color: string }
+interface Uncertainty { flag: boolean; message: string; tier: string }
+interface SymptomEdge { symptom: string; weight: number }
 interface DiagnosisResult {
   id?: string;
   crop: string;
@@ -16,6 +34,11 @@ interface DiagnosisResult {
   all_predictions?: Prediction[];
   source: 'model' | 'llm';
   inferenceMode?: string;
+  // ── Soft Computing outputs ──
+  fuzzy?:        FuzzyLabel;            // [C4] Fuzzy Logic
+  uncertainty?:  Uncertainty;           // [C3] Uncertainty Handling
+  top3?:         Prediction[];          // [C1] Probabilistic Reasoning
+  symptomGraph?: SymptomEdge[];        // [C2] Symptom-Disease PGM Graph
 }
 
 // ─── Severity badge config ────────────────────────────────────────────────────
@@ -37,6 +60,10 @@ export default function DiagnosisUploader() {
   const [showAll, setShowAll]     = useState(false);
   const [dragging, setDragging]   = useState(false);
   const inputRef                  = useRef<HTMLInputElement>(null);
+  // ── PGM Evidence nodes (condition the Bayesian posterior) ──
+  const [cropType, setCropType]   = useState<string>('Tomato');
+  const [season, setSeason]       = useState<string>(detectSeason());
+  const currentSeasonLabel        = useMemo(() => SEASONS.find(s => s.value === season)?.label ?? season, [season]);
 
   const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith('image/')) { setError('Please upload an image file.'); return; }
@@ -54,6 +81,8 @@ export default function DiagnosisUploader() {
     const f = e.dataTransfer.files[0];
     if (f) handleFile(f);
   }, [handleFile]);
+
+  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setShowAll(false); };
 
   const handleSubmit = async () => {
     if (!file) return;
@@ -89,6 +118,9 @@ export default function DiagnosisUploader() {
           image: base64,
           contentType: file.type || 'image/jpeg',
           fileName: file.name,
+          // PGM evidence nodes — condition the Bayesian posterior
+          cropType,
+          season,
         }),
       });
 
@@ -111,7 +143,15 @@ export default function DiagnosisUploader() {
       console.log('📊 Debug:', data._debug);
 
       if (!data.success) throw new Error(data.error ?? 'Diagnosis failed');
-      setResult({ ...data.diagnosis, source: data.source, inferenceMode: data.inferenceMode });
+      setResult({
+        ...data.diagnosis,
+        source:        data.source,
+        inferenceMode: data.inferenceMode,
+        fuzzy:         data.fuzzy,
+        uncertainty:   data.uncertainty,
+        top3:          data.top3,
+        symptomGraph:  data.symptomGraph,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
@@ -119,9 +159,8 @@ export default function DiagnosisUploader() {
     }
   };
 
-  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setShowAll(false); };
-
   const sev = severityConfig[result?.severity ?? 'unknown'] ?? severityConfig.unknown;
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 py-10 px-4">
@@ -183,6 +222,43 @@ export default function DiagnosisUploader() {
           </div>
         )}
 
+        {/* PGM Evidence Inputs — observable context for Bayesian inference */}
+        {!result && file && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-green-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Leaf className="w-3.5 h-3.5" />
+              Context (improves accuracy via Bayesian re-ranking)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Evidence node 1: Crop type */}
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Crop Type</label>
+                <select
+                  value={cropType}
+                  onChange={e => setCropType(e.target.value)}
+                  className="w-full text-sm border border-green-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  {CROP_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {/* Evidence node 2: Season (auto-detected, user can override) */}
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Season</label>
+                <select
+                  value={season}
+                  onChange={e => setSeason(e.target.value)}
+                  className="w-full text-sm border border-green-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  {SEASONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-green-600 italic">
+              Season auto-detected as <strong>{currentSeasonLabel}</strong>
+            </p>
+          </div>
+        )}
+
         {/* Submit Button */}
         {!result && (
           <button onClick={handleSubmit} disabled={!file || loading}
@@ -197,6 +273,7 @@ export default function DiagnosisUploader() {
             )}
           </button>
         )}
+
 
         {/* Loading state */}
         {loading && (
@@ -223,24 +300,21 @@ export default function DiagnosisUploader() {
             {preview && (
               <img src={preview} alt="Diagnosed crop" className="w-full h-40 object-cover" />
             )}
-
             <div className="p-6 space-y-5">
-              {/* Source badge */}
-              <div className="flex items-center justify-between">
+
+              {/* Inference source + severity row */}
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 {result.inferenceMode === 'huggingface' ? (
                   <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full text-xs font-semibold">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    HF Model · {((result.confidence ?? 0) * 100).toFixed(1)}% confidence
+                    <CheckCircle className="w-3.5 h-3.5" /> HF Model · Neural Network [C6]
                   </span>
                 ) : result.inferenceMode === 'demo' ? (
                   <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full text-xs font-semibold">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Demo Mode · Example Result
+                    <Sparkles className="w-3.5 h-3.5" /> Demo Mode
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 px-2.5 py-1 rounded-full text-xs font-semibold">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    GPT-4o Vision · AI Analyzed
+                    <Sparkles className="w-3.5 h-3.5" /> GPT-4o Vision
                   </span>
                 )}
                 <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${sev.bg} ${sev.color}`}>
@@ -248,12 +322,125 @@ export default function DiagnosisUploader() {
                 </span>
               </div>
 
-              {/* Crop & disease */}
+              {/* [C4] Fuzzy Logic — linguistic confidence label */}
+              {result.fuzzy && (
+                <div className={`flex items-center justify-between rounded-xl px-4 py-3 border
+                  ${result.fuzzy.level === 'high'   ? 'bg-green-50 border-green-200' :
+                    result.fuzzy.level === 'medium' ? 'bg-amber-50 border-amber-200' :
+                                                      'bg-red-50   border-red-200'}`}>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">
+                      Fuzzy Logic Confidence [C4]
+                    </p>
+                    <p className={`text-sm font-extrabold
+                      ${result.fuzzy.level === 'high'   ? 'text-green-700' :
+                        result.fuzzy.level === 'medium' ? 'text-amber-700' : 'text-red-700'}`}>
+                      {result.fuzzy.label} — {((result.confidence ?? 0) * 100).toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">{result.fuzzy.description}</p>
+                  </div>
+                  <div className="w-16 text-right shrink-0">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full
+                        ${result.fuzzy.level === 'high'   ? 'bg-green-500' :
+                          result.fuzzy.level === 'medium' ? 'bg-amber-400' : 'bg-red-400'}`}
+                        style={{ width: `${((result.confidence ?? 0) * 100).toFixed(0)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{((result.confidence ?? 0) * 100).toFixed(0)}/100</p>
+                  </div>
+                </div>
+              )}
+
+              {/* [C3] Uncertainty Handling */}
+              {result.uncertainty?.flag && (
+                <div className={`flex items-start gap-3 rounded-xl p-4 border
+                  ${result.uncertainty.tier === 'uncertain' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                  <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0
+                    ${result.uncertainty.tier === 'uncertain' ? 'text-red-500' : 'text-amber-500'}`} />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-0.5">Uncertainty Handling [C3]</p>
+                    <p className={`text-sm font-semibold
+                      ${result.uncertainty.tier === 'uncertain' ? 'text-red-700' : 'text-amber-700'}`}>
+                      {result.uncertainty.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Disease name */}
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Detected</p>
                 <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">{result.disease}</h2>
-                <p className="text-sm text-gray-500 font-medium mt-0.5">Crop: <span className="text-gray-700 font-semibold">{result.crop}</span></p>
+                <p className="text-sm text-gray-500 font-medium mt-0.5">
+                  Crop: <span className="text-gray-700 font-semibold">{result.crop}</span>
+                </p>
               </div>
+
+              {/* [C1] Probabilistic Reasoning — Top 3 */}
+              {result.top3 && result.top3.length > 0 && (
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+                    Probabilistic Reasoning — Top Predictions [C1]
+                  </p>
+                  <div className="space-y-2.5">
+                    {result.top3.map((p, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
+                          ${i === 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-700 truncate capitalize">{p.label}</p>
+                          <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${i === 0 ? 'bg-green-500' : i === 1 ? 'bg-blue-400' : 'bg-gray-400'}`}
+                              style={{ width: `${((p.score ?? 0) * 100).toFixed(0)}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-gray-600 shrink-0 w-12 text-right">
+                          {p.pct ?? `${((p.score ?? 0) * 100).toFixed(1)}%`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* [C2] Symptom–Disease PGM Graph */}
+              {result.symptomGraph && result.symptomGraph.length > 0 && (
+                <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-700 mb-3">
+                    Symptom–Disease Graph (PGM) [C2]
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {result.symptomGraph.map((e, i) => (
+                      <div key={i} className="flex justify-between items-center bg-white border border-violet-100 rounded-lg px-3 py-2">
+                        <span className="text-xs text-gray-700 capitalize font-medium">{e.symptom}</span>
+                        <span className="text-xs font-bold text-violet-600 ml-2 shrink-0">
+                          {(e.weight * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-violet-400 mt-2 italic">
+                    Edge weights = P(this disease | observed symptom)
+                  </p>
+                </div>
+              )}
+
+              {/* [C5] Hybrid Reasoning badge */}
+              {result.inferenceMode === 'huggingface' && (
+                <div className="flex items-center gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+                  <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-indigo-700">Hybrid Reasoning Active [C5]</p>
+                    <p className="text-[11px] text-indigo-400 mt-0.5">
+                      CNN likelihood (70%) + Symptom-Disease Graph (30%) + Bayesian Context Prior
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Treatment */}
               <div className="bg-green-50 border border-green-100 rounded-xl p-4">
@@ -261,7 +448,7 @@ export default function DiagnosisUploader() {
                 <p className="text-sm text-gray-700 leading-relaxed">{result.treatment}</p>
               </div>
 
-              {/* Symptoms / Prevention (model path only) */}
+              {/* Symptoms / Prevention */}
               {(result.symptoms || result.prevention) && (
                 <div className="grid grid-cols-1 gap-3">
                   {result.symptoms && (
@@ -283,24 +470,25 @@ export default function DiagnosisUploader() {
               {result.all_predictions && result.all_predictions.length > 0 && (
                 <div>
                   <button onClick={() => setShowAll(!showAll)}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors font-semibold">
+                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-semibold">
                     {showAll ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     {showAll ? 'Hide' : 'Show'} all predictions
                   </button>
                   {showAll && (
                     <div className="mt-3 space-y-2">
                       {result.all_predictions.map((p, i) => {
-                        const { crop: c, disease: d } = { crop: p.label.split('___')[0]?.replaceAll('_', ' ') ?? '?', disease: p.label.split('___')[1]?.replaceAll('_', ' ') ?? '?' };
+                        const parts = p.label.split('___');
+                        const label = `${parts[0]?.replace(/_/g,' ')} — ${parts[1]?.replace(/_/g,' ') ?? '?'}`;
                         const pct = (p.score * 100).toFixed(1);
                         return (
                           <div key={i} className="flex items-center gap-3">
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-gray-700 truncate">{c} — {d}</p>
+                              <p className="text-xs font-semibold text-gray-700 truncate">{label}</p>
                               <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                <div className="h-full bg-green-400 rounded-full" style={{ width: `${pct}%` }} />
                               </div>
                             </div>
-                            <span className="text-xs font-bold text-gray-500 shrink-0 w-12 text-right">{pct}%</span>
+                            <span className="text-xs font-bold text-gray-500 w-12 text-right shrink-0">{pct}%</span>
                           </div>
                         );
                       })}
@@ -316,6 +504,7 @@ export default function DiagnosisUploader() {
                   Diagnose Another
                 </button>
               </div>
+
             </div>
           </div>
         )}
@@ -323,3 +512,4 @@ export default function DiagnosisUploader() {
     </div>
   );
 }
+
