@@ -3,7 +3,7 @@ import { Upload, X, Leaf, AlertTriangle, CheckCircle, Loader2, Sparkles, Chevron
 import { supabase } from '../lib/supabase';
 
 // ─── PGM Evidence constants ────────────────────────────────────────────────────
-const CROP_TYPES = ['Tomato','Wheat','Maize','Grape','Pepper','Potato','Apple','Rice','Cotton','Soybean','Other'];
+const CROP_TYPES = ['Tomato','Wheat','Maize','Grape','Pepper','Potato','Apple','Rice','Cotton','Soybean','Chickpea','Blackgram','Sugarcane','Other'];
 const SEASONS = [
   { value: 'kharif', label: 'Kharif (Monsoon · Jun–Oct)' },
   { value: 'rabi',   label: 'Rabi (Winter · Nov–Mar)' },
@@ -89,8 +89,18 @@ export default function DiagnosisUploader() {
     setLoading(true); setError(null); setResult(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('You must be logged in to run a diagnosis.');
+      // Ensure we have a fresh, valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Your session has expired. Please log out and log back in.');
+      }
+
+      // Check if session is about to expire and optionally refresh
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at && session.expires_at - now < 300) {
+        await supabase.auth.refreshSession();
+      }
 
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
       const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -107,18 +117,16 @@ export default function DiagnosisUploader() {
         reader.readAsDataURL(file);
       });
 
+      // We updated the diagnose function so we can point back to the main endpoint
       const response = await fetch(`${SUPABASE_URL}/functions/v1/diagnose`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
           'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           image: base64,
-          contentType: file.type || 'image/jpeg',
-          fileName: file.name,
-          // PGM evidence nodes — condition the Bayesian posterior
           cropType,
           season,
         }),

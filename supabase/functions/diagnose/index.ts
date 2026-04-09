@@ -129,15 +129,27 @@ function bayesianRerank(preds: HFPrediction[], kb: KBRow[], season: string, regi
 }
 
 // ── HuggingFace call ──────────────────────────────────────────────────────────
-async function callHuggingFace(imageUrl: string, hfToken: string): Promise<HFPrediction[]> {
+async function callHuggingFace(imageUrl: string, hfToken: string, modelId: string): Promise<HFPrediction[]> {
+  console.log(`[HF] Calling model: ${modelId}`)
   const res = await fetch(
-    'https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-classification',
+    `https://router.huggingface.co/hf-inference/models/${modelId}`,
     { method: 'POST',
       headers: { Authorization: `Bearer ${hfToken}`, 'Content-Type': 'application/json', 'x-wait-for-model': 'true', 'x-use-cache': 'false' },
       body: JSON.stringify({ url: imageUrl }) }
   )
-  const data = await res.json()
-  console.log(`[HF] Status:${res.status} Top:${JSON.stringify(data).slice(0,200)}`)
+  
+  const rawText = await res.text()
+  console.log(`[HF] Status:${res.status} Response text length: ${rawText.length}`)
+  
+  let data;
+  try {
+    data = JSON.parse(rawText)
+  } catch (e) {
+    throw new Error(`HF API error (Status ${res.status}): non-JSON response from router: ${rawText}`)
+  }
+  
+  console.log(`[HF] Parsed Top:${JSON.stringify(data).slice(0,200)}`)
+  if (!res.ok) throw new Error(`HF API HTTP error ${res.status}: ${JSON.stringify(data)}`)
   if (data.error) throw new Error(`HF API error: ${data.error}`)
   if (!Array.isArray(data) || !data.length) throw new Error(`HF unexpected: ${JSON.stringify(data)}`)
   return data as HFPrediction[]
@@ -210,8 +222,17 @@ serve(async (req: Request) => {
     }
 
     if (hfToken) {
+      // 5. Multi-Model Routing: Select model based on crop coverage
+      const primaryCrops = ['Tomato','Wheat','Maize','Grape','Pepper','Potato','Apple','Rice','Cotton','Soybean']
+      const useExtendedModel = !primaryCrops.includes(cropType)
+      const modelId = useExtendedModel 
+        ? 'xsyash/linkanjarad-mobilenet_v2_1.0_224-plant-disease-identification'
+        : 'linkanjarad/mobilenet_v2_1.0_224-plant-disease-classification'
+      
+      _debug.modelId = modelId
+
       try {
-        const rawPreds = await callHuggingFace(publicUrl, hfToken)
+        const rawPreds = await callHuggingFace(publicUrl, hfToken, modelId)
         _debug.hfRaw = rawPreds.slice(0, 3)
 
         // [PGM] Bayesian re-ranking using seasonal + regional priors
